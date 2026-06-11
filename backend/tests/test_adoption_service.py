@@ -128,3 +128,33 @@ def test_concurrent_adoption_lock(db):
     # Verify that exactly one succeeded and one failed
     successes = [r for r in results if r == "SUCCESS"]
     assert len(successes) == 1, "Expected exactly one adoption to succeed."
+
+
+def test_fsm_party_limit_failure(db):
+    """
+    Test that a 7th consecutive adoption fails with "Party is full." error.
+    """
+    from app.models import UserPokemon
+
+    # Setup user with 6 pokemon already in party
+    receiver = User(user_id="user_1", latitude=0.0, longitude=0.0, last_updated=datetime.utcnow())
+    db.add(receiver)
+    db.commit()
+    db.refresh(receiver)
+
+    for i in range(6):
+        user_pokemon = UserPokemon(user_id=receiver.id, pokemon_id=i+1)
+        db.add(user_pokemon)
+    db.commit()
+
+    # Setup new pokemon for 7th adoption
+    pokemon = PokemonEntity(pokemon_id=25, latitude=0.0, longitude=0.0, created_at=datetime.utcnow(), expires_at=datetime.utcnow())
+    db.add(pokemon)
+    db.commit()
+    db.refresh(pokemon)
+
+    adoption = create_adoption(db, pokemon_entity_id=pokemon.id, receiver_user_id=receiver.user_id)
+    adoption = transition_state(db, adoption.id, AdoptionStatus.PENDING_MEETUP)
+
+    with pytest.raises(ValueError, match="Party is full. Maximum of 6 Pokemon allowed."):
+        transition_state(db, adoption.id, AdoptionStatus.ADOPTED)

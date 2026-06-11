@@ -8,9 +8,12 @@ from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.orm import Session
 from datetime import datetime
 from app.models import Base, User, PokemonEntity
-from app.schemas import LocationUpdate, NearbyResponse, UserSchema, PokemonEntitySchema
+from app.schemas import LocationUpdate, NearbyResponse, UserSchema, PokemonEntitySchema, AdoptionCreate, AdoptionSchema, AdoptionUpdateStatus
 from app.database import engine, get_db
 from app.spatial_service import calculate_bounding_box, haversine_distance
+from app.pokeapi_service import spawn_wild_pokemon
+from app.adoption_service import create_adoption, transition_state
+from app.models import AdoptionStatus
 
 Base.metadata.create_all(bind=engine)
 
@@ -83,3 +86,40 @@ def get_nearby(latitude: float, longitude: float, db: Session = Depends(get_db))
         "users": nearby_users,
         "pokemon": nearby_pokemon
     }
+
+from pydantic import BaseModel
+
+class SpawnRequest(BaseModel):
+    latitude: float
+    longitude: float
+
+@app.post("/api/v1/map/spawn", response_model=PokemonEntitySchema)
+async def spawn_pokemon_endpoint(request: SpawnRequest, db: Session = Depends(get_db)):
+    """
+    Spawn a wild Pokemon at the given coordinates.
+    """
+    return await spawn_wild_pokemon(db, request.latitude, request.longitude)
+
+
+@app.post("/api/v1/adoptions/initiate", response_model=AdoptionSchema)
+def initiate_adoption_endpoint(adoption_create: AdoptionCreate, db: Session = Depends(get_db)):
+    """
+    Initiate an adoption process.
+    """
+    return create_adoption(
+        db,
+        pokemon_entity_id=adoption_create.pokemon_entity_id,
+        receiver_user_id=adoption_create.receiver_user_id,
+        provider_user_id=adoption_create.provider_user_id
+    )
+
+@app.patch("/api/v1/adoptions/{adoption_id}/finalize", response_model=AdoptionSchema)
+def finalize_adoption_endpoint(adoption_id: int, db: Session = Depends(get_db)):
+    """
+    Finalize an adoption process.
+    """
+    try:
+        adoption = transition_state(db, adoption_id, AdoptionStatus.ADOPTED)
+        return adoption
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))

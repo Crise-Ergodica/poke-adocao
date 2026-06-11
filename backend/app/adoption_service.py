@@ -7,7 +7,7 @@ Service to manage the Finite State Machine (FSM) for Pokemon adoptions.
 from datetime import datetime
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
-from app.models import Adoption, AdoptionStatus, PokemonEntity, User
+from app.models import Adoption, AdoptionStatus, PokemonEntity, User, UserPokemon
 from app.spatial_service import haversine_distance
 
 def create_adoption(db: Session, pokemon_entity_id: int, receiver_user_id: str, provider_user_id: str = None) -> Adoption:
@@ -93,6 +93,11 @@ def transition_state(db: Session, adoption_id: int, new_status: AdoptionStatus) 
         if distance > 50.0:
             raise ValueError(f"Distance exceeds 50 meters. Current distance is {distance:.2f} meters.")
 
+        # Check party limit
+        party_count = db.query(UserPokemon).filter(UserPokemon.user_id == receiver.id).count()
+        if party_count >= 6:
+            raise ValueError("Party is full. Maximum of 6 Pokemon allowed.")
+
     # Apply state transition
     adoption.status = new_status
     adoption.updated_at = datetime.utcnow()
@@ -105,6 +110,10 @@ def transition_state(db: Session, adoption_id: int, new_status: AdoptionStatus) 
         # This update block is necessary because optimistic locking in SA
         # happens when the locked row itself is updated or deleted.
         pokemon.version_id = pokemon.version_id + 1
+
+        # Add to user's party
+        user_pokemon = UserPokemon(user_id=receiver.id, pokemon_id=pokemon.pokemon_id)
+        db.add(user_pokemon)
 
     try:
         db.commit()
