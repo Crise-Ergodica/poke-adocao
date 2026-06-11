@@ -4,7 +4,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useTheme } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
-import HomeScreen from '../screens/HomeScreen';
+import RadarScreen from '../screens/RadarScreen';
 import AddPokemonScreen from '../screens/AddPokemonScreen';
 import ProcessesScreen from '../screens/ProcessesScreen';
 
@@ -27,10 +27,10 @@ export function MainTabs() {
       }}
     >
       <Tab.Screen 
-        name="Home" 
-        component={HomeScreen} 
+        name="Radar"
+        component={RadarScreen}
         options={{
-          tabBarIcon: ({ color }) => <MaterialCommunityIcons name="magnify" color={color} size={26} />
+          tabBarIcon: ({ color }) => <MaterialCommunityIcons name="radar" color={color} size={26} />
         }}
       />
       <Tab.Screen 
