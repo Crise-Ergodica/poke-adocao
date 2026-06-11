@@ -8,16 +8,24 @@ from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.orm import Session
 from datetime import datetime
 from app.models import Base, User, PokemonEntity
-from app.schemas import LocationUpdate, NearbyResponse, UserSchema, PokemonEntitySchema, AdoptionCreate, AdoptionSchema, AdoptionUpdateStatus
+from app.schemas import LocationUpdate, NearbyResponse, UserSchema, PokemonEntitySchema, AdoptionCreate, AdoptionSchema, AdoptionUpdateStatus, LoginRequest
 from app.database import engine, get_db
 from app.spatial_service import calculate_bounding_box, haversine_distance
 from app.pokeapi_service import spawn_wild_pokemon
 from app.adoption_service import create_adoption, transition_state
 from app.models import AdoptionStatus
+from app.auth_service import login_or_create_user
 
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
+
+@app.post("/api/v1/auth/login", response_model=UserSchema)
+def login_endpoint(request: LoginRequest, db: Session = Depends(get_db)):
+    """
+    Authenticate or create a user based on their username.
+    """
+    return login_or_create_user(db, request.username)
 
 @app.post("/api/v1/location/update")
 def update_location(location: LocationUpdate, db: Session = Depends(get_db)):
