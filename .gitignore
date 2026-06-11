@@ -42,3 +42,4 @@ yarn-error.*
 backend/venv/
 __pycache__/
 *.pyc
+*.db
