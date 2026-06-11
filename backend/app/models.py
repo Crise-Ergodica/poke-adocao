@@ -4,10 +4,20 @@ Author: Aurora Drumond Costa Magalhães
 Database models for the application.
 """
 
-from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey
+import enum
+from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, Enum
 from sqlalchemy.orm import declarative_base, relationship
 
 Base = declarative_base()
+
+class AdoptionStatus(enum.Enum):
+    """
+    Enum representing the state of an adoption.
+    """
+    NEW = "NEW"
+    PENDING_MEETUP = "PENDING_MEETUP"
+    CANCELLED = "CANCELLED"
+    ADOPTED = "ADOPTED"
 
 class User(Base):
     """
@@ -68,3 +78,37 @@ class PokemonEntity(Base):
     latitude = Column(Float)
     longitude = Column(Float)
     created_at = Column(DateTime)
+    expires_at = Column(DateTime)
+    version_id = Column(Integer, nullable=False, default=1)
+
+    __mapper_args__ = {
+        "version_id_col": version_id
+    }
+
+
+class Adoption(Base):
+    """
+    Adoption model representing the process of adopting a Pokemon.
+
+    Attributes:
+        id (int): Primary key.
+        pokemon_entity_id (int): Foreign key to the PokemonEntity table.
+        provider_user_id (str): ID of the user providing the Pokemon (nullable).
+        receiver_user_id (str): ID of the user receiving the Pokemon.
+        status (AdoptionStatus): The current state of the adoption.
+        created_at (DateTime): Timestamp when the adoption was created.
+        updated_at (DateTime): Timestamp when the adoption was last updated.
+    """
+    __tablename__ = 'adoptions'
+
+    id = Column(Integer, primary_key=True, index=True)
+    pokemon_entity_id = Column(Integer, ForeignKey('pokemon_entities.id'), index=True)
+    provider_user_id = Column(String, ForeignKey('users.user_id'), nullable=True)
+    receiver_user_id = Column(String, ForeignKey('users.user_id'))
+    status = Column(Enum(AdoptionStatus), default=AdoptionStatus.NEW)
+    created_at = Column(DateTime)
+    updated_at = Column(DateTime)
+
+    pokemon_entity = relationship("PokemonEntity")
+    provider = relationship("User", foreign_keys=[provider_user_id])
+    receiver = relationship("User", foreign_keys=[receiver_user_id])
