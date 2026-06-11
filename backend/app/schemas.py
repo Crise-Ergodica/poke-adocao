@@ -5,8 +5,9 @@ Pydantic schemas for the application API.
 """
 
 from pydantic import BaseModel, Field
-from typing import List
+from typing import List, Optional
 from datetime import datetime
+from app.models import AdoptionStatus
 
 class LocationUpdate(BaseModel):
     """
@@ -86,3 +87,52 @@ class NearbyResponse(BaseModel):
     """
     users: List[UserSchema]
     pokemon: List[PokemonEntitySchema]
+
+
+class AdoptionCreate(BaseModel):
+    """
+    Schema for creating a new adoption.
+
+    Attributes:
+        pokemon_entity_id (int): ID of the PokemonEntity to adopt.
+        provider_user_id (Optional[str]): ID of the user providing the Pokemon.
+        receiver_user_id (str): ID of the user receiving the Pokemon.
+    """
+    pokemon_entity_id: int
+    provider_user_id: Optional[str] = None
+    receiver_user_id: str
+
+
+class AdoptionUpdateStatus(BaseModel):
+    """
+    Schema for updating the status of an adoption.
+
+    Attributes:
+        status (AdoptionStatus): The new status to transition to.
+    """
+    status: AdoptionStatus
+
+
+class AdoptionSchema(BaseModel):
+    """
+    Schema representing an Adoption in API responses.
+
+    Attributes:
+        id (int): Adoption ID.
+        pokemon_entity_id (int): ID of the PokemonEntity.
+        provider_user_id (Optional[str]): ID of the user providing the Pokemon.
+        receiver_user_id (str): ID of the user receiving the Pokemon.
+        status (AdoptionStatus): Current status.
+        created_at (datetime): Creation timestamp.
+        updated_at (datetime): Last update timestamp.
+    """
+    id: int
+    pokemon_entity_id: int
+    provider_user_id: Optional[str]
+    receiver_user_id: str
+    status: AdoptionStatus
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
