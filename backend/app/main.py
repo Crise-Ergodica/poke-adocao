@@ -24,6 +24,13 @@ app = FastAPI()
 def login_endpoint(request: LoginRequest, db: Session = Depends(get_db)):
     """
     Authenticate or create a user based on their username.
+
+    Args:
+        request (LoginRequest): The login request containing the username.
+        db (Session): The database session.
+
+    Returns:
+        UserSchema: The authenticated or newly created user.
     """
     return login_or_create_user(db, request.username)
 
@@ -31,6 +38,16 @@ def login_endpoint(request: LoginRequest, db: Session = Depends(get_db)):
 def update_location(location: LocationUpdate, db: Session = Depends(get_db)):
     """
     Update the user's location if the accuracy is sufficient.
+
+    Args:
+        location (LocationUpdate): The location update data.
+        db (Session): The database session.
+
+    Raises:
+        HTTPException: If accuracy is > 50m.
+
+    Returns:
+        dict: A success message.
     """
     if location.accuracy > 50.0:
         raise HTTPException(status_code=400, detail="Accuracy insufficient. Must be <= 50m.")
@@ -60,6 +77,14 @@ def get_nearby(latitude: float, longitude: float, db: Session = Depends(get_db))
     """
     Get all users and pokemon within a 50m radius.
     First filters by bounding box for efficiency, then by exact Haversine distance.
+
+    Args:
+        latitude (float): Center latitude.
+        longitude (float): Center longitude.
+        db (Session): The database session.
+
+    Returns:
+        NearbyResponse: An object containing nearby users and pokemon.
     """
     distance_limit = 50.0
     min_lat, max_lat, min_lon, max_lon = calculate_bounding_box(latitude, longitude, distance_limit)
@@ -105,6 +130,13 @@ class SpawnRequest(BaseModel):
 async def spawn_pokemon_endpoint(request: SpawnRequest, db: Session = Depends(get_db)):
     """
     Spawn a wild Pokemon at the given coordinates.
+
+    Args:
+        request (SpawnRequest): The spawn request data containing coordinates.
+        db (Session): The database session.
+
+    Returns:
+        PokemonEntitySchema: The spawned pokemon entity.
     """
     return await spawn_wild_pokemon(db, request.latitude, request.longitude)
 
@@ -113,6 +145,13 @@ async def spawn_pokemon_endpoint(request: SpawnRequest, db: Session = Depends(ge
 def initiate_adoption_endpoint(adoption_create: AdoptionCreate, db: Session = Depends(get_db)):
     """
     Initiate an adoption process.
+
+    Args:
+        adoption_create (AdoptionCreate): The adoption creation payload.
+        db (Session): The database session.
+
+    Returns:
+        AdoptionSchema: The initiated adoption object.
     """
     return create_adoption(
         db,
@@ -125,6 +164,16 @@ def initiate_adoption_endpoint(adoption_create: AdoptionCreate, db: Session = De
 def finalize_adoption_endpoint(adoption_id: int, db: Session = Depends(get_db)):
     """
     Finalize an adoption process.
+
+    Args:
+        adoption_id (int): The ID of the adoption to finalize.
+        db (Session): The database session.
+
+    Raises:
+        HTTPException: If the state transition is invalid.
+
+    Returns:
+        AdoptionSchema: The finalized adoption object.
     """
     try:
         adoption = transition_state(db, adoption_id, AdoptionStatus.ADOPTED)

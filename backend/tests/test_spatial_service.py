@@ -11,6 +11,9 @@ def test_haversine_distance():
     """
     Test that the Haversine formula correctly calculates the distance
     between two known points.
+
+    Returns:
+        None
     """
     # Coordinates of New York City and Los Angeles
     nyc_lat, nyc_lon = 40.7128, -74.0060
@@ -25,6 +28,9 @@ def test_haversine_distance():
 def test_haversine_close_distance():
     """
     Test small distance calculation.
+
+    Returns:
+        None
     """
     # Roughly 50 meters apart
     lat1, lon1 = 0.0, 0.0
@@ -37,6 +43,9 @@ def test_haversine_close_distance():
 def test_calculate_bounding_box():
     """
     Test bounding box calculation.
+
+    Returns:
+        None
     """
     lat, lon = 0.0, 0.0
     distance_m = 50
@@ -57,6 +66,9 @@ def test_calculate_bounding_box():
 def test_rejects_entities_at_51m():
     """
     Verify the rejection logic for entities outside the 50m radius limit.
+
+    Returns:
+        None
     """
     lat1, lon1 = 0.0, 0.0
     lat2, lon2 = 0.00046, 0.0 # ~51 meters
