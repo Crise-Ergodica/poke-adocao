@@ -3,13 +3,13 @@ import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { MainTabs } from './MainTabs';
 import LoginScreen from '../screens/LoginScreen';
+import { useAuth } from '../store/AuthContext';
 
 const Stack = createNativeStackNavigator();
 
 export function RootNavigator() {
-  // Estado provisório para desenvolvimento. 
-  // Na Etapa 4, substituiremos isso pelo estado global do Zustand.
-  const isAuthenticated = false; 
+  const { userId } = useAuth();
+  const isAuthenticated = !!userId;
 
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>

@@ -9,6 +9,15 @@ from typing import List, Optional
 from datetime import datetime
 from app.models import AdoptionStatus
 
+class LoginRequest(BaseModel):
+    """
+    Schema for login request.
+
+    Attributes:
+        username (str): The provided username.
+    """
+    username: str
+
 class LocationUpdate(BaseModel):
     """
     Schema for incoming location updates.

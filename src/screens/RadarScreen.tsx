@@ -4,16 +4,17 @@ import { Card, Text, Button, Snackbar, List, useTheme, ActivityIndicator } from 
 import { useUserLocation } from '../hooks/useUserLocation';
 import { getNearby } from '../services/pokemonService';
 import { initiateAdoption, finalizeAdoption } from '../services/adoptionService';
+import { useAuth } from '../store/AuthContext';
 
 export default function RadarScreen() {
   const theme = useTheme();
+  const { userId } = useAuth();
   const { location, isAccuracySufficient, errorMsg, isLoading } = useUserLocation();
   const [nearbyPokemon, setNearbyPokemon] = useState<any[]>([]);
   const [nearbyUsers, setNearbyUsers] = useState<any[]>([]);
   const [snackbarVisible, setSnackbarVisible] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [loadingRadar, setLoadingRadar] = useState(false);
-  const receiverUserId = "user_1"; // Mock user ID for MVP
 
   const fetchNearby = async () => {
     if (location && isAccuracySufficient) {
@@ -42,8 +43,13 @@ export default function RadarScreen() {
   };
 
   const handleAdopt = async (pokemonEntityId: number) => {
+    if (!userId) {
+      showSnackbar("Authentication error. User ID not found.");
+      return;
+    }
+
     try {
-      const adoption = await initiateAdoption(pokemonEntityId, receiverUserId);
+      const adoption = await initiateAdoption(pokemonEntityId, userId);
       await finalizeAdoption(adoption.id);
       showSnackbar("Pokemon adopted successfully!");
       fetchNearby(); // Refresh lists
