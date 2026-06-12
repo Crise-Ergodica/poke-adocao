@@ -12,39 +12,14 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from app.database import get_db
 
-SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
-
-engine = create_engine(
-    SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
-)
-TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-Base.metadata.create_all(bind=engine)
-
-def override_get_db():
-    try:
-        db = TestingSessionLocal()
-        yield db
-    finally:
-        db.close()
-
-app.dependency_overrides[get_db] = override_get_db
-
-client = TestClient(app)
-
-@pytest.fixture(autouse=True)
-def setup_database():
-    """
-    Setup and teardown the database for each test.
-    """
-    Base.metadata.create_all(bind=engine)
-    yield
-    Base.metadata.drop_all(bind=engine)
 
 
-def test_update_location_success():
+def test_update_location_success(client):
     """
     Test successful location update with accuracy <= 50m.
+
+    Returns:
+        None
     """
     payload = {
         "userId": "user123",
@@ -58,9 +33,12 @@ def test_update_location_success():
     assert response.json()["message"] == "Location updated successfully"
 
 
-def test_update_location_accuracy_insufficient():
+def test_update_location_accuracy_insufficient(client):
     """
     Test location update rejection when accuracy > 50m.
+
+    Returns:
+        None
     """
     payload = {
         "userId": "user123",
@@ -74,11 +52,14 @@ def test_update_location_accuracy_insufficient():
     assert "accuracy" in response.json()["detail"].lower()
 
 
-def test_get_nearby_entities():
+def test_get_nearby_entities(client, db_session):
     """
     Test fetching nearby entities within 50m.
+
+    Returns:
+        None
     """
-    db = TestingSessionLocal()
+    db = db_session
 
     # Center point
     center_lat, center_lon = 40.7128, -74.0060
@@ -100,7 +81,6 @@ def test_get_nearby_entities():
     db.add(poke2)
 
     db.commit()
-    db.close()
 
     response = client.get(f"/api/v1/map/nearby?latitude={center_lat}&longitude={center_lon}")
     assert response.status_code == 200

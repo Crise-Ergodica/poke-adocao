@@ -14,11 +14,11 @@ def login_or_create_user(db: Session, username: str) -> UserSchema:
     Looks up a user by username. If the user doesn't exist, creates a new one.
 
     Args:
-        db (Session): Database session.
-        username (str): The provided username.
+        db (Session): The database session.
+        username (str): The username to login.
 
     Returns:
-        UserSchema: The authenticated user.
+        UserSchema: The authenticated or newly created user entity.
     """
     user = db.query(User).filter(User.user_id == username).first()
 

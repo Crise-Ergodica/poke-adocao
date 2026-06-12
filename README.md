@@ -1,33 +1,56 @@
-# Poke-Adocao
+# Poke-Adocao: Pokemon Adoption System
 
-## System Architecture
-The system consists of a Python backend API built with FastAPI, a PostgreSQL database, and a React Native (Expo) mobile frontend using Material 3 design principles.
+## Project Overview
+Poke-Adocao is a mobile application and backend service dedicated to the adoption of Pokemon via Geolocation. The system allows users to discover, adopt, and manage their Pokemon party based on their physical proximity to available Pokemon.
 
-- **Backend**: FastAPI is used to provide strict typing and validation. It handles user management, pokemon rescue logic, spatial queries, and external API integration.
-- **Database**: PostgreSQL with PostGIS extensions to handle spatial queries efficiently (calculating proximity between users and pokemons).
-- **Frontend**: React Native via Expo provides a cross-platform mobile application, styled with Material 3.
+## Architecture
+The system is built as a monorepo containing:
+- **Backend:** A RESTful API built with Python and FastAPI. It manages user authentication, adoption logic, and spatial queries.
+- **Frontend:** A cross-platform mobile application developed with React Native and Expo, utilizing Material 3 design principles via React Native Paper.
+- **Database:** PostgreSQL (production) or SQLite (testing) integrated using SQLAlchemy for ORM capabilities.
 
-## Language and Framework Decisions
-- **Python & FastAPI**: Chosen for rapid development, automatic OpenAPI documentation, and strict type checking via Pydantic, ensuring data integrity.
-- **PostgreSQL**: Selected for its robust support for spatial data (PostGIS), which is essential for calculating distances between users and pokemons.
-- **React Native (Expo)**: Enables single-codebase development for both iOS and Android platforms, accelerating the MVP release.
-- **PokeAPI**: Used as the source of truth for pokemon data, ensuring accurate and up-to-date information.
+## Finite State Machine
+The adoption process is modeled as a Finite State Machine (FSM) with the following states:
+1. **NEW:** A newly discovered Pokemon available for adoption.
+2. **PENDING_MEETUP:** The user has initiated the adoption process and must meet the Pokemon at its specific location.
+3. **CANCELLED:** The adoption process was aborted or the time-to-live (TTL) expired.
+4. **ADOPTED:** The user has successfully completed the adoption by being physically close (<= 50 meters) to the Pokemon.
 
-## Spatial Calculation Algorithms
-The system requires checking the proximity between a user adopting a pokemon and the user giving it up. A successful adoption requires them to be within 50 meters of each other.
-- **Haversine Formula**: The backend will use the Haversine formula (or PostGIS equivalent functions like `ST_Distance`) to calculate the great-circle distance between two geographic coordinates (latitude and longitude).
-- Distance threshold: `distance(user_A, user_B) <= 50.0` meters.
+**Party Limits:** Users are strictly limited to rescuing and maintaining a maximum of 6 Pokemon in their party at any given time.
 
-## API Usage
-The backend API exposes endpoints for:
-- User registration and authentication.
-- Fetching available pokemons on the map.
-- Rescuing a pokemon (max 6 per user).
-- Adopting a pokemon (includes state machine logic and proximity validation).
+## Spatial Engine
+To handle location-based discoveries and adoptions, the backend implements a spatial engine that computes distances using the Haversine formula. For optimized querying, it first calculates a Bounding Box around the user's coordinates to pre-filter potential candidates before executing the precise distance calculation.
 
-## Project Guidelines
-- Code in English.
-- Docstrings in Google or reST format.
-- Test Driven Development (TDD) mandatory.
-- No emojis allowed.
-- Real data only (no mockups), integrated with PokeAPI.
+## Setup & Usage
+
+To set up and run the application, use the provided Makefile commands from the project root:
+
+1. **Install Dependencies:**
+	```bash
+	make install
+	```
+	This installs Python dependencies for the backend using Poetry and Node.js dependencies for the frontend using npm.
+
+2. **Start the Backend:**
+	```bash
+	make start-backend
+	```
+	This starts the Uvicorn server for the FastAPI application.
+
+3. **Start the Frontend:**
+	```bash
+	make start-frontend
+	```
+	This starts the Expo development server.
+
+4. **Run Tests:**
+	```bash
+	make test
+	```
+	Executes the pytest test suite for the backend and Jest test suite for the frontend.
+
+5. **Clean Cache:**
+	```bash
+	make clean
+	```
+	Removes all cache files including `__pycache__`, `.pytest_cache`, `.expo`, and `node_modules`.

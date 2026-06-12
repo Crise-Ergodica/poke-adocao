@@ -15,6 +15,12 @@ from app.pokeapi_service import spawn_wild_pokemon
 async def test_spawn_wild_pokemon_success(mock_get):
     """
     Test spawning a wild pokemon successfully.
+
+    Args:
+        mock_get: The mocked HTTP GET method.
+
+    Returns:
+        None
     """
     mock_db = MagicMock()
 

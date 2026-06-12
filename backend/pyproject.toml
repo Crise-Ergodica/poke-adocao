@@ -1,0 +1,29 @@
+[tool.poetry]
+package-mode = false
+
+[project]
+name = "poke-adocao"
+version = "0.1.0"
+description = "Adoption of Pokemon via Geolocation"
+authors = [
+    {name = "Aurora Drumond Costa Magalhães",email = "aurora@example.com"}
+]
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi (>=0.110.0)",
+    "uvicorn (>=0.28.0)",
+    "sqlalchemy (>=2.0.0)",
+    "psycopg2-binary (>=2.9.9)"
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[dependency-groups]
+dev = [
+    "pytest (>=8.0.0)",
+    "pytest-asyncio (>=1.4.0,<2.0.0)",
+    "httpx (>=0.27.0)"
+]

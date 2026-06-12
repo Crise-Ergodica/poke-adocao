@@ -21,7 +21,7 @@ class AdoptionStatus(enum.Enum):
 
 class User(Base):
     """
-    User model.
+    Database model representing a user in the system.
 
     Attributes:
         id (int): Primary key.
@@ -44,7 +44,7 @@ class User(Base):
 
 class UserPokemon(Base):
     """
-    Model representing a Pokemon in a User's party.
+    Database model representing a relationship between a User and an adopted Pokemon.
 
     Attributes:
         id (int): Primary key.
@@ -62,14 +62,17 @@ class UserPokemon(Base):
 
 class PokemonEntity(Base):
     """
-    Pokemon Entity model representing an abandoned Pokemon.
+    Database model representing a physical instance of a Pokemon on the map.
 
     Attributes:
         id (int): Primary key.
-        pokemon_id (int): The ID of the Pokemon from PokeAPI.
+        pokemon_id (int): PokeAPI Pokemon ID.
         latitude (float): Latitude of the Pokemon.
         longitude (float): Longitude of the Pokemon.
-        created_at (DateTime): Timestamp when the Pokemon was abandoned.
+        created_at (datetime): Timestamp when the entity was spawned.
+        expires_at (datetime): Timestamp when the entity despawns.
+        version_id (int): Optimistic locking version.
+
     """
     __tablename__ = 'pokemon_entities'
 
@@ -88,7 +91,7 @@ class PokemonEntity(Base):
 
 class Adoption(Base):
     """
-    Adoption model representing the process of adopting a Pokemon.
+    Database model representing the lifecycle of an adoption process.
 
     Attributes:
         id (int): Primary key.
