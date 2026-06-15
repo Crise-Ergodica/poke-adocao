@@ -37,6 +37,7 @@ class User(Base):
     user_id = Column(String, unique=True, index=True)
     latitude = Column(Float)
     longitude = Column(Float)
+    icon_url = Column(String, nullable=True)
     last_updated = Column(DateTime)
 
     party = relationship("UserPokemon", back_populates="user")
@@ -80,6 +81,7 @@ class PokemonEntity(Base):
     pokemon_id = Column(Integer, index=True)
     latitude = Column(Float)
     longitude = Column(Float)
+    sprite_url = Column(String, nullable=True)
     created_at = Column(DateTime)
     expires_at = Column(DateTime)
     version_id = Column(Integer, nullable=False, default=1)

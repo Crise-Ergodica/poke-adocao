@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
-import { Card, Text, Button, Snackbar, List, useTheme, ActivityIndicator } from 'react-native-paper';
+import { Card, Text, Button, Snackbar, List, useTheme, ActivityIndicator, Avatar } from 'react-native-paper';
 import { useUserLocation } from '../hooks/useUserLocation';
 import { getNearby } from '../services/pokemonService';
 import { initiateAdoption, finalizeAdoption } from '../services/adoptionService';
@@ -94,6 +94,11 @@ export default function RadarScreen() {
                   key={index}
                   title={`Pokemon ID: ${pokemon.pokemon_id}`}
                   description={`Lat: ${pokemon.latitude.toFixed(4)}, Lon: ${pokemon.longitude.toFixed(4)}`}
+                  left={props => (
+                    pokemon.sprite_url ?
+                    <Avatar.Image size={40} source={{ uri: pokemon.sprite_url }} style={{backgroundColor: 'transparent'}} /> :
+                    <Avatar.Icon size={40} icon="help" />
+                  )}
                   right={props => (
                     <Button mode="contained" onPress={() => handleAdopt(pokemon.id)}>
                       Adopt
@@ -116,6 +121,11 @@ export default function RadarScreen() {
                   key={index}
                   title={`Trainer: ${user.user_id}`}
                   description={`Lat: ${user.latitude.toFixed(4)}, Lon: ${user.longitude.toFixed(4)}`}
+                  left={props => (
+                    user.icon_url ?
+                    <Avatar.Image size={40} source={{ uri: user.icon_url }} /> :
+                    <Avatar.Icon size={40} icon="account" />
+                  )}
                 />
               ))
             )}

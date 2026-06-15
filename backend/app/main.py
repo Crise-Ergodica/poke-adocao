@@ -14,6 +14,7 @@ from app.spatial_service import calculate_bounding_box, haversine_distance
 from app.pokeapi_service import spawn_wild_pokemon
 from app.adoption_service import create_adoption, transition_state
 from app.models import AdoptionStatus
+from pydantic import BaseModel
 from app.auth_service import login_or_create_user
 
 Base.metadata.create_all(bind=engine)
@@ -71,6 +72,34 @@ def update_location(location: LocationUpdate, db: Session = Depends(get_db)):
 
     return {"message": "Location updated successfully"}
 
+class IconUpdateRequest(BaseModel):
+    icon_url: str
+
+@app.patch("/api/v1/users/{user_id}/icon", response_model=UserSchema)
+def update_user_icon(user_id: str, request: IconUpdateRequest, db: Session = Depends(get_db)):
+    """
+    Update the user's icon URL.
+
+    Args:
+        user_id (str): The ID of the user.
+        request (IconUpdateRequest): The new icon URL.
+        db (Session): The database session.
+
+    Raises:
+        HTTPException: If the user is not found.
+
+    Returns:
+        UserSchema: The updated user entity.
+    """
+    user = db.query(User).filter(User.user_id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    user.icon_url = request.icon_url
+    db.commit()
+    db.refresh(user)
+    return user
+
 
 @app.get("/api/v1/map/nearby", response_model=NearbyResponse)
 def get_nearby(latitude: float, longitude: float, db: Session = Depends(get_db)):
@@ -119,8 +148,6 @@ def get_nearby(latitude: float, longitude: float, db: Session = Depends(get_db))
         "users": nearby_users,
         "pokemon": nearby_pokemon
     }
-
-from pydantic import BaseModel
 
 class SpawnRequest(BaseModel):
     latitude: float

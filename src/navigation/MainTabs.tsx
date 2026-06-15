@@ -7,6 +7,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import RadarScreen from '../screens/RadarScreen';
 import AddPokemonScreen from '../screens/AddPokemonScreen';
 import ProcessesScreen from '../screens/ProcessesScreen';
+import ProfileScreen from '../screens/ProfileScreen';
 
 const Tab = createBottomTabNavigator();
 
@@ -45,6 +46,13 @@ export function MainTabs() {
         component={ProcessesScreen} 
         options={{
           tabBarIcon: ({ color }) => <MaterialCommunityIcons name="check" color={color} size={26} />
+        }}
+      />
+      <Tab.Screen
+        name="Profile"
+        component={ProfileScreen}
+        options={{
+          tabBarIcon: ({ color }) => <MaterialCommunityIcons name="account" color={color} size={26} />
         }}
       />
     </Tab.Navigator>

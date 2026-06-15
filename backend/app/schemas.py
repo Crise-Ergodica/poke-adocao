@@ -63,6 +63,7 @@ class UserSchema(BaseModel):
     user_id: str
     latitude: float
     longitude: float
+    icon_url: Optional[str] = None
     party: List[UserPokemonSchema] = []
 
     class Config:
@@ -82,6 +83,7 @@ class PokemonEntitySchema(BaseModel):
     pokemon_id: int
     latitude: float
     longitude: float
+    sprite_url: Optional[str] = None
 
     class Config:
         from_attributes = True
