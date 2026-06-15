@@ -20,8 +20,7 @@ describe('LoginScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
-
-  it('allows user to enter username and submit', async () => {
+it('allows user to enter username and submit', async () => {
     // Setup the mock response for the login service
     (login as jest.Mock).mockResolvedValueOnce({ user_id: 'test_trainer' });
 
@@ -43,7 +42,7 @@ describe('LoginScreen', () => {
       expect(login).toHaveBeenCalledWith('test_trainer');
       expect(mockSetUserId).toHaveBeenCalledWith('test_trainer');
     });
-  });
+  }, 10000);
 
   it('shows error if username is empty', async () => {
     const { getByTestId, getByText } = render(

@@ -5,6 +5,7 @@ Main FastAPI application defining spatial endpoints.
 """
 
 from fastapi import FastAPI, Depends, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from datetime import datetime
 from app.models import Base, User, PokemonEntity
@@ -17,9 +18,18 @@ from app.models import AdoptionStatus
 from pydantic import BaseModel
 from app.auth_service import login_or_create_user
 
+
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  
+    allow_credentials=True,
+    allow_methods=["*"],  
+    allow_headers=["*"],
+)
 
 @app.get("/api/v1/users/{user_id}", response_model=UserSchema)
 def get_user_profile(user_id: str, db: Session = Depends(get_db)):
