@@ -1,4 +1,13 @@
-.PHONY: install start-backend start-frontend test clean
+.PHONY: install start-backend start-frontend test clean setup dev
+
+setup: clean install
+
+dev:
+	@echo "Starting backend and frontend..."
+	@cd backend && poetry run uvicorn app.main:app --reload & \
+	BACKEND_PID=$$!; \
+	trap "kill $$BACKEND_PID" EXIT; \
+	npm run start
 
 install:
 	cd backend && poetry install

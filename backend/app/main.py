@@ -21,6 +21,28 @@ Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
+@app.get("/api/v1/users/{user_id}", response_model=UserSchema)
+def get_user_profile(user_id: str, db: Session = Depends(get_db)):
+    """
+    Get a user's profile and their adopted party.
+
+    Args:
+        user_id (str): The unique ID of the user.
+        db (Session): The database session.
+
+    Raises:
+        HTTPException: If the user is not found.
+
+    Returns:
+        UserSchema: The user profile including their party.
+    """
+    from sqlalchemy.orm import joinedload
+    user = db.query(User).options(joinedload(User.party)).filter(User.user_id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return user
+
+
 @app.post("/api/v1/auth/login", response_model=UserSchema)
 def login_endpoint(request: LoginRequest, db: Session = Depends(get_db)):
     """
