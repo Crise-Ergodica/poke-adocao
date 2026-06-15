@@ -7,6 +7,7 @@ Service to integrate with PokeAPI and spawn wild Pokemon.
 import httpx
 import random
 import math
+from fastapi import HTTPException
 from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
 from app.models import PokemonEntity
@@ -28,9 +29,17 @@ async def spawn_wild_pokemon(db: Session, latitude: float, longitude: float) -> 
 
     # 2. Fetch data from PokeAPI
     url = f"https://pokeapi.co/api/v2/pokemon/{pokemon_id}"
-    async with httpx.AsyncClient() as client:
-        response = await client.get(url)
-        response.raise_for_status()
+    sprite_url = None
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(url)
+            response.raise_for_status()
+            data = response.json()
+            sprite_url = data.get("sprites", {}).get("front_default")
+    except httpx.RequestError as e:
+        raise HTTPException(status_code=503, detail="PokeAPI is currently unavailable.")
+    except httpx.HTTPStatusError as e:
+        raise HTTPException(status_code=503, detail="PokeAPI returned an error.")
 
     # 3. Add spatial jitter (~5 to 10 meters)
     # 1 degree of latitude is ~111,320 meters.
@@ -60,6 +69,7 @@ async def spawn_wild_pokemon(db: Session, latitude: float, longitude: float) -> 
         pokemon_id=pokemon_id,
         latitude=new_latitude,
         longitude=new_longitude,
+        sprite_url=sprite_url,
         created_at=now,
         expires_at=expires_at
     )
