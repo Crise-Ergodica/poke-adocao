@@ -91,3 +91,32 @@ def test_get_nearby_entities(client, db_session):
 
     assert len(data["pokemon"]) == 1
     assert data["pokemon"][0]["pokemon_id"] == 25
+
+
+def test_get_user_profile(client, db_session):
+    """
+    Test fetching a user's profile and their party.
+
+    Returns:
+        None
+    """
+    from app.models import UserPokemon
+
+    db = db_session
+    user_id = "test_user"
+    user = User(user_id=user_id, latitude=0.0, longitude=0.0)
+    db.add(user)
+    db.commit()
+
+    # Add a pokemon to the user's party
+    party_member = UserPokemon(user_id=user.id, pokemon_id=25)
+    db.add(party_member)
+    db.commit()
+
+    response = client.get(f"/api/v1/users/{user_id}")
+    assert response.status_code == 200
+
+    data = response.json()
+    assert data["user_id"] == user_id
+    assert len(data["party"]) == 1
+    assert data["party"][0]["pokemon_id"] == 25

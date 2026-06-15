@@ -5,8 +5,7 @@ import { useTheme } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 import RadarScreen from '../screens/RadarScreen';
-import AddPokemonScreen from '../screens/AddPokemonScreen';
-import ProcessesScreen from '../screens/ProcessesScreen';
+import PartyScreen from '../screens/PartyScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 
 const Tab = createBottomTabNavigator();
@@ -35,17 +34,10 @@ export function MainTabs() {
         }}
       />
       <Tab.Screen 
-        name="Adicionar" 
-        component={AddPokemonScreen} 
+        name="Party"
+        component={PartyScreen}
         options={{
-          tabBarIcon: ({ color }) => <MaterialCommunityIcons name="plus" color={color} size={26} />
-        }}
-      />
-      <Tab.Screen 
-        name="Processos" 
-        component={ProcessesScreen} 
-        options={{
-          tabBarIcon: ({ color }) => <MaterialCommunityIcons name="check" color={color} size={26} />
+          tabBarIcon: ({ color }) => <MaterialCommunityIcons name="pokeball" color={color} size={26} />
         }}
       />
       <Tab.Screen
