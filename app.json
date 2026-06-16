@@ -17,11 +17,12 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/icon.png",
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true
     },
+    "_comment": "The user must place their desired icon image at ./assets/icon.png",
     "web": {
       "favicon": "./assets/favicon.png"
     }

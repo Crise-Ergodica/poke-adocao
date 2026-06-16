@@ -25,7 +25,7 @@ describe('LoginScreen', () => {
   
   it('allows user to enter email and password and submit', async () => {
     // Setup the mock response for the login service
-    (login as jest.Mock).mockResolvedValueOnce({ access_token: 'fake_token' });
+    (login as jest.Mock).mockResolvedValueOnce({ access_token: 'fake_token', user_id: 'test' });
 
     const { getByTestId } = render(
       <SafeAreaProvider initialMetrics={{ frame: { x: 0, y: 0, width: 0, height: 0 }, insets: { top: 0, left: 0, right: 0, bottom: 0 } }}>

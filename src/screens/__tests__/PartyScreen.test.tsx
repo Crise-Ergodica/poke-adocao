@@ -12,6 +12,11 @@ jest.mock('../../store/AuthContext', () => ({
   }),
 }));
 
+// Mock useFocusEffect from React Navigation
+jest.mock('@react-navigation/native', () => ({
+  useFocusEffect: jest.fn((callback) => callback()),
+}));
+
 // Mock fetch
 global.fetch = jest.fn(() =>
   Promise.resolve({
