@@ -6,12 +6,17 @@
 
 const API_URL = 'http://localhost:8000/api/v1/adoptions'; // Adjust as needed for local network
 
-export const initiateAdoption = async (pokemon_entity_id: number, receiver_user_id: string, provider_user_id?: string) => {
+export const initiateAdoption = async (pokemon_entity_id: number, receiver_user_id: string, token: string | null, provider_user_id?: string) => {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
   const response = await fetch(`${API_URL}/initiate`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers,
     body: JSON.stringify({
       pokemon_entity_id,
       receiver_user_id,
@@ -27,12 +32,17 @@ export const initiateAdoption = async (pokemon_entity_id: number, receiver_user_
   return response.json();
 };
 
-export const finalizeAdoption = async (adoption_id: number) => {
+export const finalizeAdoption = async (adoption_id: number, token: string | null) => {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
   const response = await fetch(`${API_URL}/${adoption_id}/finalize`, {
     method: 'PATCH',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers,
   });
 
   if (!response.ok) {

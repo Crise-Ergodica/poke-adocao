@@ -14,49 +14,55 @@ from app.database import get_db
 from app.models import Base, User
 
 
-def test_login_new_user(client, db_session):
+def test_register_new_user(client, db_session):
     """
-    Test logging in with a new user creates the user.
+    Test registering a new user.
 
     Returns:
         None
     """
     response = client.post(
-        "/api/v1/auth/login",
-        json={"username": "new_trainer_123"}
+        "/api/v1/auth/register",
+        json={
+            "email": "test@example.com",
+            "username": "new_trainer_123",
+            "password": "securepassword"
+        }
     )
     assert response.status_code == 200
     data = response.json()
     assert data["user_id"] == "new_trainer_123"
-    assert data["latitude"] is None or data["latitude"] == 0.0
-    assert data["longitude"] is None or data["longitude"] == 0.0
 
     # Verify in DB
     db = db_session
     user = db.query(User).filter(User.user_id == "new_trainer_123").first()
     assert user is not None
+    assert user.email == "test@example.com"
 
 
 def test_login_existing_user(client, db_session):
     """
-    Test logging in with an existing user returns the user.
+    Test logging in with an existing user returns a token.
     """
-    # Create user first
+    # Register user first
     client.post(
-        "/api/v1/auth/login",
-        json={"username": "existing_trainer"}
+        "/api/v1/auth/register",
+        json={
+            "email": "login@example.com",
+            "username": "existing_trainer",
+            "password": "securepassword"
+        }
     )
 
-    # Login again
+    # Login
     response = client.post(
         "/api/v1/auth/login",
-        json={"username": "existing_trainer"}
+        json={
+            "email": "login@example.com",
+            "password": "securepassword"
+        }
     )
     assert response.status_code == 200
     data = response.json()
-    assert data["user_id"] == "existing_trainer"
-
-    # Verify no duplicates in DB
-    db = db_session
-    users = db.query(User).filter(User.user_id == "existing_trainer").all()
-    assert len(users) == 1
+    assert "access_token" in data
+    assert data["token_type"] == "bearer"

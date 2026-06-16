@@ -8,7 +8,7 @@ import { useAuth } from '../store/AuthContext';
 
 export default function RadarScreen() {
   const theme = useTheme();
-  const { userId } = useAuth();
+  const { userId, token } = useAuth();
   const { location, isAccuracySufficient, errorMsg, isLoading } = useUserLocation();
   const [nearbyPokemon, setNearbyPokemon] = useState<any[]>([]);
   const [nearbyUsers, setNearbyUsers] = useState<any[]>([]);
@@ -20,7 +20,7 @@ export default function RadarScreen() {
     if (location && isAccuracySufficient) {
       setLoadingRadar(true);
       try {
-        const data = await getNearby(location.latitude, location.longitude);
+        const data = await getNearby(location.latitude, location.longitude, token);
         setNearbyPokemon(data.pokemon || []);
         setNearbyUsers(data.users || []);
       } catch (error: any) {
@@ -43,14 +43,14 @@ export default function RadarScreen() {
   };
 
   const handleAdopt = async (pokemonEntityId: number) => {
-    if (!userId) {
-      showSnackbar("Authentication error. User ID not found.");
+    if (!userId || !token) {
+      showSnackbar("Authentication error. User ID or token not found.");
       return;
     }
 
     try {
-      const adoption = await initiateAdoption(pokemonEntityId, userId);
-      await finalizeAdoption(adoption.id);
+      const adoption = await initiateAdoption(pokemonEntityId, userId, token);
+      await finalizeAdoption(adoption.id, token);
       showSnackbar("Pokemon adopted successfully!");
       fetchNearby(); // Refresh lists
     } catch (error: any) {

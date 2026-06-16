@@ -9,14 +9,40 @@ from typing import List, Optional
 from datetime import datetime
 from app.models import AdoptionStatus
 
-class LoginRequest(BaseModel):
+class UserCreate(BaseModel):
+    """
+    Schema for creating a new user.
+
+    Attributes:
+        email (str): The user's email address.
+        username (str): The user's chosen username.
+        password (str): The user's password.
+    """
+    email: str
+    username: str
+    password: str
+
+class UserLogin(BaseModel):
     """
     Schema for login request.
 
     Attributes:
-        username (str): The provided username.
+        email (str): The user's email.
+        password (str): The user's password.
     """
-    username: str
+    email: str
+    password: str
+
+class Token(BaseModel):
+    """
+    Schema for JWT token response.
+
+    Attributes:
+        access_token (str): The JWT string.
+        token_type (str): The type of token (e.g., 'bearer').
+    """
+    access_token: str
+    token_type: str
 
 class LocationUpdate(BaseModel):
     """

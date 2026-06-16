@@ -13,7 +13,7 @@ const STATIC_AVATARS = [
 
 export default function ProfileScreen() {
   const theme = useTheme();
-  const { userId, iconUrl, setIconUrl } = useAuth();
+  const { userId, iconUrl, setIconUrl, token } = useAuth();
   const [inputUrl, setInputUrl] = useState('');
   const [loading, setLoading] = useState(false);
   const [snackbarVisible, setSnackbarVisible] = useState(false);
@@ -25,14 +25,14 @@ export default function ProfileScreen() {
   };
 
   const handleUpdateIcon = async (url: string) => {
-    if (!userId) {
-      showSnackbar('User ID not found.');
+    if (!userId || !token) {
+      showSnackbar('User ID or token not found.');
       return;
     }
 
     setLoading(true);
     try {
-      await updateIcon(userId, url);
+      await updateIcon(userId, url, token);
       setIconUrl(url);
       showSnackbar('Profile icon updated successfully!');
       setInputUrl('');

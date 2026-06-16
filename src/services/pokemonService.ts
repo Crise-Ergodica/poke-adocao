@@ -6,12 +6,17 @@
 
 const API_URL = 'http://localhost:8000/api/v1/map'; // Adjust as needed
 
-export const spawnPokemon = async (latitude: number, longitude: number) => {
+export const spawnPokemon = async (latitude: number, longitude: number, token: string | null = null) => {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
   const response = await fetch(`${API_URL}/spawn`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers,
     body: JSON.stringify({
       latitude,
       longitude,
@@ -26,12 +31,17 @@ export const spawnPokemon = async (latitude: number, longitude: number) => {
   return response.json();
 };
 
-export const getNearby = async (latitude: number, longitude: number) => {
+export const getNearby = async (latitude: number, longitude: number, token: string | null = null) => {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
   const response = await fetch(`${API_URL}/nearby?latitude=${latitude}&longitude=${longitude}`, {
     method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers,
   });
 
   if (!response.ok) {
