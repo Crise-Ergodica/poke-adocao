@@ -1,3 +1,5 @@
+import httpx
+from typing import List, Optional
 """
 Author: Aurora Drumond Costa Magalhães
 
@@ -14,7 +16,7 @@ from app.schemas import LocationUpdate, NearbyResponse, UserSchema, PokemonEntit
 from app.database import engine, get_db, SessionLocal
 from app.spatial_service import calculate_bounding_box, haversine_distance
 from app.pokeapi_service import spawn_wild_pokemon
-from app.adoption_service import create_adoption, transition_state, return_pokemon
+from app.adoption_service import create_adoption, transition_state, return_pokemon, get_available_adoptions
 from app.models import AdoptionStatus
 from pydantic import BaseModel
 from app.auth_service import register_user, authenticate_user, create_access_token, SECRET_KEY, ALGORITHM
@@ -390,3 +392,39 @@ def return_pokemon_endpoint(
         return adoption
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+@app.get("/api/v1/adoptions/available", response_model=List[AdoptionSchema])
+async def get_available_adoptions_endpoint(
+    pokemon_name: Optional[str] = None,
+    provider_name: Optional[str] = None,
+    db: Session = Depends(get_db)
+):
+    """
+    Get a list of available adoptions.
+
+    Args:
+        pokemon_name (Optional[str]): Optional Pokemon name to filter by.
+        provider_name (Optional[str]): Optional provider name to filter by.
+        db (Session): Database session.
+
+    Returns:
+        List[AdoptionSchema]: A list of available adoptions.
+    """
+    pokemon_id = None
+    if pokemon_name:
+        url = f"https://pokeapi.co/api/v2/pokemon/{pokemon_name.lower()}"
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.get(url)
+                if response.status_code == 404:
+                    return []
+                response.raise_for_status()
+                data = response.json()
+                pokemon_id = data.get("id")
+        except httpx.RequestError:
+            raise HTTPException(status_code=503, detail="PokeAPI is currently unavailable.")
+        except httpx.HTTPStatusError:
+            raise HTTPException(status_code=503, detail="PokeAPI returned an error.")
+
+    adoptions = get_available_adoptions(db, pokemon_id=pokemon_id, provider_name=provider_name)
+    return adoptions
