@@ -124,3 +124,65 @@ def transition_state(db: Session, adoption_id: int, new_status: AdoptionStatus) 
     db.refresh(adoption)
 
     return adoption
+
+def return_pokemon(db: Session, pokemon_entity_id: int, user: User) -> Adoption:
+    """
+    Returns an adopted Pokemon to the map.
+
+    Args:
+        db (Session): Database session.
+        pokemon_entity_id (int): The ID of the Pokemon to return.
+        user (User): The user returning the Pokemon.
+
+    Raises:
+        ValueError: If validation fails or the adoption record is not found.
+
+    Returns:
+        Adoption: The updated adoption record.
+    """
+    # Find the adoption record
+    adoption = db.query(Adoption).filter(
+        Adoption.pokemon_entity_id == pokemon_entity_id,
+        Adoption.status == AdoptionStatus.ADOPTED,
+        Adoption.receiver_user_id == user.user_id
+    ).first()
+
+    if not adoption:
+        raise ValueError("Adoption record not found or not owned by user.")
+
+    # Find the Pokemon entity
+    pokemon = db.query(PokemonEntity).filter(PokemonEntity.id == pokemon_entity_id).first()
+    if not pokemon:
+        raise ValueError("Pokemon entity not found.")
+
+    # Find the UserPokemon entry
+    user_pokemon = db.query(UserPokemon).filter(
+        UserPokemon.user_id == user.id,
+        UserPokemon.pokemon_id == pokemon.pokemon_id
+    ).first()
+
+    if not user_pokemon:
+        raise ValueError("Pokemon not found in user's party.")
+
+    # Update state
+    adoption.status = AdoptionStatus.NEW
+    adoption.provider_user_id = user.user_id
+    adoption.updated_at = datetime.utcnow()
+
+    # Update Pokemon entity to match user's location and increment version_id
+    pokemon.latitude = user.latitude
+    pokemon.longitude = user.longitude
+    pokemon.version_id = pokemon.version_id + 1
+
+    # Remove from user's party
+    db.delete(user_pokemon)
+
+    try:
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        raise e
+
+    db.refresh(adoption)
+
+    return adoption

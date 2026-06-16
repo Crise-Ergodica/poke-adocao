@@ -147,3 +147,54 @@ def test_fsm_party_limit_failure(db_session):
 
     with pytest.raises(ValueError, match="Party is full. Maximum of 6 Pokemon allowed."):
         transition_state(db_session, adoption.id, AdoptionStatus.ADOPTED)
+
+
+def test_return_pokemon_success(db_session):
+    """
+    Test successfully returning a fostered Pokemon.
+    """
+    from app.adoption_service import return_pokemon
+    from app.models import UserPokemon
+
+    # Setup
+    receiver = User(user_id="user_ret", latitude=10.0, longitude=10.0, last_updated=datetime.utcnow())
+    pokemon = PokemonEntity(pokemon_id=25, latitude=0.0, longitude=0.0, created_at=datetime.utcnow(), expires_at=datetime.utcnow())
+    db_session.add(receiver)
+    db_session.add(pokemon)
+    db_session.commit()
+    db_session.refresh(receiver)
+    db_session.refresh(pokemon)
+
+    # Action: Create and adopt
+    adoption = create_adoption(db_session, pokemon_entity_id=pokemon.id, receiver_user_id=receiver.user_id)
+
+    # Overwrite coordinates for testing since transition_state to ADOPTED will check distance
+    pokemon.latitude = 10.0
+    pokemon.longitude = 10.0
+    db_session.commit()
+
+    adoption = transition_state(db_session, adoption.id, AdoptionStatus.PENDING_MEETUP)
+    adoption = transition_state(db_session, adoption.id, AdoptionStatus.ADOPTED)
+
+    assert adoption.status == AdoptionStatus.ADOPTED
+
+    # Verify party
+    party_count = db_session.query(UserPokemon).filter(UserPokemon.user_id == receiver.id).count()
+    assert party_count == 1
+
+    # Now return the Pokemon
+    old_version = pokemon.version_id
+    returned_adoption = return_pokemon(db_session, pokemon.id, receiver)
+
+    assert returned_adoption.status == AdoptionStatus.NEW
+    assert returned_adoption.provider_user_id == receiver.user_id
+
+    # Verify Pokemon updated location and version
+    db_session.refresh(pokemon)
+    assert pokemon.latitude == 10.0
+    assert pokemon.longitude == 10.0
+    assert pokemon.version_id == old_version + 1
+
+    # Verify party empty
+    party_count = db_session.query(UserPokemon).filter(UserPokemon.user_id == receiver.id).count()
+    assert party_count == 0
