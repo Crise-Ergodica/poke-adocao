@@ -66,6 +66,9 @@ export default function PartyScreen() {
               source={{ uri: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${item.pokemon_id}.png` }}
               style={styles.sprite}
             />
+            <Text variant="bodyMedium" style={styles.pokemonIdLabel}>
+              ID: {item.pokemon_id}
+            </Text>
             <Button
               mode="outlined"
               onPress={() => handleReturn(item.id)}
@@ -131,7 +134,7 @@ const styles = StyleSheet.create({
   },
   slot: {
     aspectRatio: 1,
-    borderRadius: 12,
+    borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
     overflow: 'hidden',
@@ -141,10 +144,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     width: '100%',
     height: '100%',
+    paddingVertical: 8,
   },
   sprite: {
-    width: '60%',
-    height: '60%',
+    width: '50%',
+    height: '50%',
+  },
+  pokemonIdLabel: {
+    marginTop: 4,
+    fontWeight: 'bold',
   },
   emptySlot: {
     alignItems: 'center',
