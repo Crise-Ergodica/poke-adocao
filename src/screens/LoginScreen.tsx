@@ -1,3 +1,4 @@
+// Author: Aurora Drumond Costa Magalhães
 import React, { useState } from 'react';
 import { View, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
 import { Text, TextInput, Button, useTheme, Snackbar, SegmentedButtons, HelperText } from 'react-native-paper';
@@ -67,7 +68,7 @@ export default function LoginScreen() {
       const tokenData = await login(email.trim(), password);
       
       setToken(tokenData.access_token);
-      setUserId(mode === 'register' ? username.trim() : email.trim().split('@')[0]);
+      setUserId(tokenData.user_id);
 
     } catch (error: any) {
       setSnackbarMessage(error.message || "Authentication failed.");

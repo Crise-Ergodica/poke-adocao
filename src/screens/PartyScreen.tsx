@@ -1,8 +1,9 @@
 // Author: Aurora Drumond Costa Magalhães
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { View, StyleSheet, FlatList, Image, useWindowDimensions } from 'react-native';
-import { Text, Surface, useTheme, ActivityIndicator, Button } from 'react-native-paper';
+import { Text, Surface, useTheme, ActivityIndicator, Button, Portal, Modal, TouchableRipple } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import { useAuth } from '../store/AuthContext';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { returnPokemon } from '../services/adoptionService';
@@ -12,6 +13,7 @@ const API_URL = 'http://localhost:8000/api/v1';
 interface UserPokemon {
   id: number;
   pokemon_id: number;
+  name?: string;
 }
 
 export default function PartyScreen() {
@@ -22,6 +24,14 @@ export default function PartyScreen() {
   const [party, setParty] = useState<UserPokemon[]>([]);
   const [loading, setLoading] = useState(true);
   const [returningId, setReturningId] = useState<number | null>(null);
+  const [selectedPokemon, setSelectedPokemon] = useState<UserPokemon | null>(null);
+  const [modalVisible, setModalVisible] = useState(false);
+
+  const showModal = (pokemon: UserPokemon) => {
+    setSelectedPokemon(pokemon);
+    setModalVisible(true);
+  };
+  const hideModal = () => setModalVisible(false);
 
   const fetchParty = async () => {
     if (!userId) return;
@@ -38,9 +48,11 @@ export default function PartyScreen() {
     }
   };
 
-  useEffect(() => {
-    fetchParty();
-  }, [userId]);
+  useFocusEffect(
+    useCallback(() => {
+      fetchParty();
+    }, [userId])
+  );
 
   const handleReturn = async (pokemonEntityId: number) => {
     if (!token) return;
@@ -61,24 +73,17 @@ export default function PartyScreen() {
     return (
       <Surface style={[styles.slot, { backgroundColor: theme.colors.surfaceVariant, flex: 1 / numCols, margin: 8 }]} elevation={2}>
         {item ? (
-          <View style={styles.pokemonContainer}>
-            <Image
-              source={{ uri: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${item.pokemon_id}.png` }}
-              style={styles.sprite}
-            />
-            <Text variant="bodyMedium" style={styles.pokemonIdLabel}>
-              ID: {item.pokemon_id}
-            </Text>
-            <Button
-              mode="outlined"
-              onPress={() => handleReturn(item.id)}
-              loading={returningId === item.id}
-              disabled={returningId === item.id}
-              style={styles.returnButton}
-            >
-              Devolver
-            </Button>
-          </View>
+          <TouchableRipple onPress={() => showModal(item)} style={styles.pokemonContainer}>
+            <View style={{ alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%' }}>
+              <Image
+                source={{ uri: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${item.pokemon_id}.png` }}
+                style={styles.sprite}
+              />
+              <Text variant="bodyMedium" style={styles.pokemonIdLabel}>
+                ID: {item.pokemon_id}
+              </Text>
+            </View>
+          </TouchableRipple>
         ) : (
           <View style={styles.emptySlot}>
             <MaterialCommunityIcons name="help-circle-outline" size={40} color={theme.colors.onSurfaceVariant} />
@@ -109,6 +114,48 @@ export default function PartyScreen() {
         contentContainerStyle={styles.listContainer}
         columnWrapperStyle={styles.row}
       />
+
+      <Portal>
+        <Modal visible={modalVisible} onDismiss={hideModal} contentContainerStyle={[styles.modalContainer, { backgroundColor: theme.colors.background }]}>
+          {selectedPokemon && (
+            <View style={styles.modalContent}>
+              <Image
+                source={{ uri: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${selectedPokemon.pokemon_id}.png` }}
+                style={styles.modalSprite}
+              />
+              <Text variant="titleLarge" style={styles.modalTitle}>
+                {selectedPokemon.name || `Pokemon ${selectedPokemon.pokemon_id}`}
+              </Text>
+              <Text variant="bodyMedium">ID: {selectedPokemon.pokemon_id}</Text>
+
+              <View style={styles.modalActions}>
+                <Button mode="contained" onPress={() => console.log('Ver Status')} style={styles.modalButton}>
+                  Ver Status
+                </Button>
+                <Button mode="contained" onPress={() => console.log('Renomear')} style={styles.modalButton}>
+                  Renomear
+                </Button>
+                <Button mode="contained" onPress={() => console.log('Colocar para Adoção')} style={styles.modalButton}>
+                  Colocar para Adoção
+                </Button>
+                <Button
+                  mode="outlined"
+                  textColor={theme.colors.error}
+                  style={[styles.modalButton, { borderColor: theme.colors.error }]}
+                  onPress={async () => {
+                    await handleReturn(selectedPokemon.id);
+                    hideModal();
+                  }}
+                  loading={returningId === selectedPokemon.id}
+                  disabled={returningId === selectedPokemon.id}
+                >
+                  Abandonar
+                </Button>
+              </View>
+            </View>
+          )}
+        </Modal>
+      </Portal>
     </SafeAreaView>
   );
 }
@@ -158,7 +205,28 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  returnButton: {
-    marginTop: 8,
+  modalContainer: {
+    margin: 20,
+    borderRadius: 16,
+    padding: 20,
+  },
+  modalContent: {
+    alignItems: 'center',
+  },
+  modalSprite: {
+    width: 150,
+    height: 150,
+  },
+  modalTitle: {
+    fontWeight: 'bold',
+    marginBottom: 8,
+    textTransform: 'capitalize',
+  },
+  modalActions: {
+    marginTop: 16,
+    width: '100%',
+  },
+  modalButton: {
+    marginBottom: 8,
   },
 });
