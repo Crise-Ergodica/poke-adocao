@@ -316,3 +316,37 @@ def finalize_adoption_endpoint(adoption_id: int, db: Session = Depends(get_db)):
         return adoption
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+class ReturnRequest(BaseModel):
+    pokemon_entity_id: int
+
+@app.post("/api/v1/adoptions/return")
+def return_pokemon_endpoint(
+    request: ReturnRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Return a Pokemon to the wild (or to adoption pool).
+
+    Args:
+        request (ReturnRequest): The return request data.
+        db (Session): The database session.
+        current_user (User): The authenticated user.
+
+    Returns:
+        dict: A success message.
+    """
+    from app.models import UserPokemon, Adoption, AdoptionStatus
+
+    user_pokemon = db.query(UserPokemon).filter(
+        UserPokemon.user_id == current_user.id,
+        UserPokemon.id == request.pokemon_entity_id # wait, the UI sends user_pokemon.id
+    ).first()
+
+    if not user_pokemon:
+        raise HTTPException(status_code=404, detail="Pokemon not found in your party")
+
+    db.delete(user_pokemon)
+    db.commit()
+    return {"message": "Pokemon returned successfully"}

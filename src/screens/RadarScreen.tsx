@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, ScrollView } from 'react-native';
+import { View, StyleSheet, ScrollView, useWindowDimensions } from 'react-native';
 import { Card, Text, Button, Snackbar, List, useTheme, ActivityIndicator, Avatar } from 'react-native-paper';
 import { useUserLocation } from '../hooks/useUserLocation';
 import { getNearby } from '../services/pokemonService';
@@ -8,6 +8,7 @@ import { useAuth } from '../store/AuthContext';
 
 export default function RadarScreen() {
   const theme = useTheme();
+  const { width } = useWindowDimensions();
   const { userId, token } = useAuth();
   const { location, isAccuracySufficient, errorMsg, isLoading } = useUserLocation();
   const [nearbyPokemon, setNearbyPokemon] = useState<any[]>([]);
@@ -76,35 +77,38 @@ export default function RadarScreen() {
     );
   }
 
+  const isDesktop = width > 768;
+
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView contentContainerStyle={[styles.scrollContent, isDesktop && styles.desktopContainer]}>
         <Text variant="headlineMedium" style={styles.title}>Proximity Radar</Text>
 
         {loadingRadar && <ActivityIndicator animating={true} style={styles.loader} />}
 
         <Card style={styles.card}>
           <Card.Title title="Wild Pokemon Nearby" />
-          <Card.Content>
+          <Card.Content style={isDesktop ? styles.gridContent : undefined}>
             {nearbyPokemon.length === 0 ? (
               <Text>No Pokemon nearby.</Text>
             ) : (
               nearbyPokemon.map((pokemon, index) => (
-                <List.Item
-                  key={index}
-                  title={`Pokemon ID: ${pokemon.pokemon_id}`}
-                  description={`Lat: ${pokemon.latitude.toFixed(4)}, Lon: ${pokemon.longitude.toFixed(4)}`}
-                  left={props => (
-                    pokemon.sprite_url ?
-                    <Avatar.Image size={40} source={{ uri: pokemon.sprite_url }} style={{backgroundColor: 'transparent'}} /> :
-                    <Avatar.Icon size={40} icon="help" />
-                  )}
-                  right={props => (
-                    <Button mode="contained" onPress={() => handleAdopt(pokemon.id)}>
-                      Adopt
-                    </Button>
-                  )}
-                />
+                <View key={index} style={isDesktop ? styles.gridItem : undefined}>
+                  <List.Item
+                    title={`Pokemon ID: ${pokemon.pokemon_id}`}
+                    description={`Lat: ${pokemon.latitude.toFixed(4)}, Lon: ${pokemon.longitude.toFixed(4)}`}
+                    left={props => (
+                      pokemon.sprite_url ?
+                      <Avatar.Image size={40} source={{ uri: pokemon.sprite_url }} style={{backgroundColor: 'transparent'}} /> :
+                      <Avatar.Icon size={40} icon="help" />
+                    )}
+                    right={props => (
+                      <Button mode="contained" onPress={() => handleAdopt(pokemon.id)}>
+                        Foster
+                      </Button>
+                    )}
+                  />
+                </View>
               ))
             )}
           </Card.Content>
@@ -112,21 +116,22 @@ export default function RadarScreen() {
 
         <Card style={styles.card}>
           <Card.Title title="Nearby Trainers" />
-          <Card.Content>
+          <Card.Content style={isDesktop ? styles.gridContent : undefined}>
             {nearbyUsers.length === 0 ? (
               <Text>No trainers nearby.</Text>
             ) : (
               nearbyUsers.map((user, index) => (
-                <List.Item
-                  key={index}
-                  title={`Trainer: ${user.user_id}`}
-                  description={`Lat: ${user.latitude.toFixed(4)}, Lon: ${user.longitude.toFixed(4)}`}
-                  left={props => (
-                    user.icon_url ?
-                    <Avatar.Image size={40} source={{ uri: user.icon_url }} /> :
-                    <Avatar.Icon size={40} icon="account" />
-                  )}
-                />
+                <View key={index} style={isDesktop ? styles.gridItem : undefined}>
+                  <List.Item
+                    title={`Trainer: ${user.user_id}`}
+                    description={`Lat: ${user.latitude.toFixed(4)}, Lon: ${user.longitude.toFixed(4)}`}
+                    left={props => (
+                      user.icon_url ?
+                      <Avatar.Image size={40} source={{ uri: user.icon_url }} /> :
+                      <Avatar.Icon size={40} icon="account" />
+                    )}
+                  />
+                </View>
               ))
             )}
           </Card.Content>
@@ -151,6 +156,11 @@ const styles = StyleSheet.create({
   scrollContent: {
     padding: 16,
   },
+  desktopContainer: {
+    maxWidth: 1200,
+    width: '100%',
+    alignSelf: 'center',
+  },
   title: {
     marginBottom: 16,
     textAlign: 'center',
@@ -160,5 +170,12 @@ const styles = StyleSheet.create({
   },
   loader: {
     marginBottom: 16,
+  },
+  gridContent: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  gridItem: {
+    width: '50%',
   }
 });
