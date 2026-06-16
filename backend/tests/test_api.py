@@ -120,3 +120,82 @@ def test_get_user_profile(client, db_session):
     assert data["user_id"] == user_id
     assert len(data["party"]) == 1
     assert data["party"][0]["pokemon_id"] == 25
+
+def test_update_user_icon_authorized(client, db_session):
+    """
+    Test updating user icon with valid authorization.
+    """
+    # Register and login
+    client.post("/api/v1/auth/register", json={
+        "email": "icon@example.com",
+        "username": "icon_trainer",
+        "password": "pass"
+    })
+    res = client.post("/api/v1/auth/login", json={
+        "email": "icon@example.com",
+        "password": "pass"
+    })
+    token = res.json()["access_token"]
+
+    # Update icon
+    response = client.patch(
+        "/api/v1/users/icon_trainer/icon",
+        json={"icon_url": "http://example.com/icon.png"},
+        headers={"Authorization": f"Bearer {token}"}
+    )
+    assert response.status_code == 200
+    assert response.json()["icon_url"] == "http://example.com/icon.png"
+
+def test_update_user_icon_unauthorized(client, db_session):
+    """
+    Test updating user icon with invalid user.
+    """
+    client.post("/api/v1/auth/register", json={
+        "email": "icon2@example.com",
+        "username": "icon_trainer2",
+        "password": "pass"
+    })
+    res = client.post("/api/v1/auth/login", json={
+        "email": "icon2@example.com",
+        "password": "pass"
+    })
+    token = res.json()["access_token"]
+
+    response = client.patch(
+        "/api/v1/users/some_other_user/icon",
+        json={"icon_url": "http://example.com/icon.png"},
+        headers={"Authorization": f"Bearer {token}"}
+    )
+    assert response.status_code == 403
+
+def test_initiate_adoption_authorized(client, db_session):
+    """
+    Test initiating adoption with valid authorization.
+    """
+    client.post("/api/v1/auth/register", json={
+        "email": "adopt@example.com",
+        "username": "adopt_trainer",
+        "password": "pass"
+    })
+    res = client.post("/api/v1/auth/login", json={
+        "email": "adopt@example.com",
+        "password": "pass"
+    })
+    token = res.json()["access_token"]
+
+    poke = PokemonEntity(pokemon_id=1, latitude=0.0, longitude=0.0)
+    db_session.add(poke)
+    db_session.commit()
+    db_session.refresh(poke)
+
+    response = client.post(
+        "/api/v1/adoptions/initiate",
+        json={
+            "pokemon_entity_id": poke.id,
+            "receiver_user_id": "adopt_trainer",
+            "provider_user_id": None
+        },
+        headers={"Authorization": f"Bearer {token}"}
+    )
+    assert response.status_code == 200
+    assert response.json()["receiver_user_id"] == "adopt_trainer"

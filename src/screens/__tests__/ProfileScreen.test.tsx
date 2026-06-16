@@ -26,6 +26,9 @@ describe('ProfileScreen', () => {
       setUserId: jest.fn(),
       iconUrl: null,
       setIconUrl: jest.fn(),
+      token: 'fake_token',
+      setToken: jest.fn(),
+      logout: jest.fn() as any,
     };
 
     const { getByText, getByTestId } = render(
@@ -47,7 +50,7 @@ describe('ProfileScreen', () => {
     fireEvent.press(submitButton);
 
     await waitFor(() => {
-      expect(authService.updateIcon).toHaveBeenCalledWith('test_trainer', 'https://example.com/avatar.png');
+      expect(authService.updateIcon).toHaveBeenCalledWith('test_trainer', 'https://example.com/avatar.png', 'fake_token');
     });
   });
 });

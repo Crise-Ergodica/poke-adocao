@@ -9,14 +9,16 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from datetime import datetime
 from app.models import Base, User, PokemonEntity
-from app.schemas import LocationUpdate, NearbyResponse, UserSchema, PokemonEntitySchema, AdoptionCreate, AdoptionSchema, AdoptionUpdateStatus, LoginRequest
+from app.schemas import LocationUpdate, NearbyResponse, UserSchema, PokemonEntitySchema, AdoptionCreate, AdoptionSchema, AdoptionUpdateStatus, UserCreate, UserLogin, Token
 from app.database import engine, get_db
 from app.spatial_service import calculate_bounding_box, haversine_distance
 from app.pokeapi_service import spawn_wild_pokemon
 from app.adoption_service import create_adoption, transition_state
 from app.models import AdoptionStatus
 from pydantic import BaseModel
-from app.auth_service import login_or_create_user
+from app.auth_service import register_user, authenticate_user, create_access_token, SECRET_KEY, ALGORITHM
+from fastapi.security import OAuth2PasswordBearer
+import jwt
 
 
 Base.metadata.create_all(bind=engine)
@@ -30,6 +32,39 @@ app.add_middleware(
     allow_methods=["*"],  
     allow_headers=["*"],
 )
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
+
+def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+    """
+    Extracts and validates the JWT token to return the current authenticated user.
+
+    Args:
+        token (str): The JWT access token.
+        db (Session): The database session.
+
+    Raises:
+        HTTPException: If the token is invalid or user not found.
+
+    Returns:
+        User: The authenticated user object.
+    """
+    credentials_exception = HTTPException(
+        status_code=401,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        email: str = payload.get("sub")
+        if email is None:
+            raise credentials_exception
+    except jwt.PyJWTError:
+        raise credentials_exception
+    user = db.query(User).filter(User.email == email).first()
+    if user is None:
+        raise credentials_exception
+    return user
 
 @app.get("/api/v1/users/{user_id}", response_model=UserSchema)
 def get_user_profile(user_id: str, db: Session = Depends(get_db)):
@@ -53,19 +88,44 @@ def get_user_profile(user_id: str, db: Session = Depends(get_db)):
     return user
 
 
-@app.post("/api/v1/auth/login", response_model=UserSchema)
-def login_endpoint(request: LoginRequest, db: Session = Depends(get_db)):
+@app.post("/api/v1/auth/register", response_model=UserSchema)
+def register_endpoint(request: UserCreate, db: Session = Depends(get_db)):
     """
-    Authenticate or create a user based on their username.
+    Register a new user.
 
     Args:
-        request (LoginRequest): The login request containing the username.
+        request (UserCreate): The user registration details.
         db (Session): The database session.
 
     Returns:
-        UserSchema: The authenticated or newly created user.
+        UserSchema: The newly created user.
     """
-    return login_or_create_user(db, request.username)
+    return register_user(db, request)
+
+@app.post("/api/v1/auth/login", response_model=Token)
+def login_endpoint(request: UserLogin, db: Session = Depends(get_db)):
+    """
+    Authenticate a user and return a JWT.
+
+    Args:
+        request (UserLogin): The login request containing email and password.
+        db (Session): The database session.
+
+    Raises:
+        HTTPException: If authentication fails.
+
+    Returns:
+        Token: The access token response.
+    """
+    user = authenticate_user(db, request.email, request.password)
+    if not user:
+        raise HTTPException(
+            status_code=401,
+            detail="Incorrect email or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    access_token = create_access_token(data={"sub": user.email})
+    return {"access_token": access_token, "token_type": "bearer"}
 
 @app.post("/api/v1/location/update")
 def update_location(location: LocationUpdate, db: Session = Depends(get_db)):
@@ -108,7 +168,12 @@ class IconUpdateRequest(BaseModel):
     icon_url: str
 
 @app.patch("/api/v1/users/{user_id}/icon", response_model=UserSchema)
-def update_user_icon(user_id: str, request: IconUpdateRequest, db: Session = Depends(get_db)):
+def update_user_icon(
+    user_id: str,
+    request: IconUpdateRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     """
     Update the user's icon URL.
 
@@ -116,13 +181,17 @@ def update_user_icon(user_id: str, request: IconUpdateRequest, db: Session = Dep
         user_id (str): The ID of the user.
         request (IconUpdateRequest): The new icon URL.
         db (Session): The database session.
+        current_user (User): The authenticated user.
 
     Raises:
-        HTTPException: If the user is not found.
+        HTTPException: If the user is not found or unauthorized.
 
     Returns:
         UserSchema: The updated user entity.
     """
+    if current_user.user_id != user_id:
+        raise HTTPException(status_code=403, detail="Not authorized to update this user")
+
     user = db.query(User).filter(User.user_id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -201,17 +270,25 @@ async def spawn_pokemon_endpoint(request: SpawnRequest, db: Session = Depends(ge
 
 
 @app.post("/api/v1/adoptions/initiate", response_model=AdoptionSchema)
-def initiate_adoption_endpoint(adoption_create: AdoptionCreate, db: Session = Depends(get_db)):
+def initiate_adoption_endpoint(
+    adoption_create: AdoptionCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     """
     Initiate an adoption process.
 
     Args:
         adoption_create (AdoptionCreate): The adoption creation payload.
         db (Session): The database session.
+        current_user (User): The authenticated user.
 
     Returns:
         AdoptionSchema: The initiated adoption object.
     """
+    if current_user.user_id != adoption_create.receiver_user_id and current_user.user_id != adoption_create.provider_user_id:
+         raise HTTPException(status_code=403, detail="Not authorized to initiate this adoption")
+
     return create_adoption(
         db,
         pokemon_entity_id=adoption_create.pokemon_entity_id,

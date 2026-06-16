@@ -1,30 +1,50 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
-import { Text, TextInput, Button, useTheme, Snackbar } from 'react-native-paper';
-import { login } from '../services/authService';
+import { Text, TextInput, Button, useTheme, Snackbar, SegmentedButtons } from 'react-native-paper';
+import { login, register } from '../services/authService';
 import { useAuth } from '../store/AuthContext';
+import { jwtDecode } from 'jwt-decode';
 
 export default function LoginScreen() {
   const theme = useTheme();
-  const { setUserId } = useAuth();
+  const { setUserId, setToken } = useAuth();
+
+  const [mode, setMode] = useState('login'); // 'login' or 'register'
+  const [email, setEmail] = useState('');
   const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+
   const [isLoading, setIsLoading] = useState(false);
   const [snackbarVisible, setSnackbarVisible] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
 
-  const handleLogin = async () => {
-    if (!username.trim()) {
-      setSnackbarMessage("Please enter a username.");
+  const handleAuth = async () => {
+    if (!email.trim() || !password.trim()) {
+      setSnackbarMessage("Please fill in email and password.");
+      setSnackbarVisible(true);
+      return;
+    }
+
+    if (mode === 'register' && !username.trim()) {
+      setSnackbarMessage("Please enter a username for registration.");
       setSnackbarVisible(true);
       return;
     }
 
     setIsLoading(true);
     try {
-      const userData = await login(username.trim());
-      setUserId(userData.user_id);
+      if (mode === 'register') {
+        await register(email.trim(), username.trim(), password);
+        // Automatically login after successful registration
+      }
+
+      const tokenData = await login(email.trim(), password);
+
+      setToken(tokenData.access_token);
+      setUserId(mode === 'register' ? username.trim() : email.trim().split('@')[0]);
+
     } catch (error: any) {
-      setSnackbarMessage(error.message || "Failed to connect to the server.");
+      setSnackbarMessage(error.message || "Authentication failed.");
       setSnackbarVisible(true);
     } finally {
       setIsLoading(false);
@@ -41,28 +61,61 @@ export default function LoginScreen() {
           Poke-Adoção
         </Text>
         <Text variant="bodyLarge" style={[styles.subtitle, { color: theme.colors.onSurfaceVariant }]}>
-          Enter your trainer name to start.
+          {mode === 'login' ? 'Sign in to continue.' : 'Create a new account.'}
         </Text>
 
+        <SegmentedButtons
+          value={mode}
+          onValueChange={setMode}
+          buttons={[
+            { value: 'login', label: 'Sign In' },
+            { value: 'register', label: 'Sign Up' },
+          ]}
+          style={styles.segmentedButton}
+        />
+
         <TextInput
-          label="Trainer Name"
-          value={username}
-          onChangeText={setUsername}
+          label="Email"
+          value={email}
+          onChangeText={setEmail}
           mode="outlined"
           autoCapitalize="none"
+          keyboardType="email-address"
           style={styles.input}
-          testID="username-input"
+          testID="email-input"
+        />
+
+        {mode === 'register' && (
+          <TextInput
+            label="Trainer Name"
+            value={username}
+            onChangeText={setUsername}
+            mode="outlined"
+            autoCapitalize="none"
+            style={styles.input}
+            testID="username-input"
+          />
+        )}
+
+        <TextInput
+          label="Password"
+          value={password}
+          onChangeText={setPassword}
+          mode="outlined"
+          secureTextEntry={true}
+          style={styles.input}
+          testID="password-input"
         />
 
         <Button
           mode="contained"
-          onPress={handleLogin}
+          onPress={handleAuth}
           loading={isLoading}
           disabled={isLoading}
           style={styles.button}
-          testID="login-button"
+          testID="auth-button"
         >
-          Login
+          {mode === 'login' ? 'Login' : 'Register'}
         </Button>
       </View>
 
@@ -101,5 +154,8 @@ const styles = StyleSheet.create({
   button: {
     marginTop: 8,
     paddingVertical: 6,
+  },
+  segmentedButton: {
+    marginBottom: 16,
   }
 });

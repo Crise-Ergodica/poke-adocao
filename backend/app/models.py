@@ -25,7 +25,9 @@ class User(Base):
 
     Attributes:
         id (int): Primary key.
-        user_id (str): Unique user identifier from frontend.
+        email (str): Unique email address of the user.
+        hashed_password (str): Bcrypt hash of the user's password.
+        user_id (str): Unique user identifier (username) from frontend.
         latitude (float): Current user latitude.
         longitude (float): Current user longitude.
         last_updated (DateTime): Timestamp of the last location update.
@@ -34,6 +36,8 @@ class User(Base):
     __tablename__ = 'users'
 
     id = Column(Integer, primary_key=True, index=True)
+    email = Column(String, unique=True, index=True)
+    hashed_password = Column(String)
     user_id = Column(String, unique=True, index=True)
     latitude = Column(Float)
     longitude = Column(Float)
