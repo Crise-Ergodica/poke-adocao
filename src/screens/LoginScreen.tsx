@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
-import { Text, TextInput, Button, useTheme, Snackbar, SegmentedButtons } from 'react-native-paper';
+import { Text, TextInput, Button, useTheme, Snackbar, SegmentedButtons, HelperText } from 'react-native-paper';
 import { login, register } from '../services/authService';
 import { useAuth } from '../store/AuthContext';
 import { jwtDecode } from 'jwt-decode';
@@ -15,6 +15,32 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   
   const [isLoading, setIsLoading] = useState(false);
+
+  const isEmailValid = (email: string) => {
+    if (!email) return false;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  const getPasswordErrors = (pass: string) => {
+    const errors = [];
+    if (pass.length < 8) errors.push('Minimum 8 characters');
+    if (!/\d/.test(pass)) errors.push('At least one number');
+    if (!/[A-Z]/.test(pass)) errors.push('At least one uppercase letter');
+    return errors;
+  };
+
+  const isPasswordValid = (pass: string) => {
+    if (mode === 'login') return pass.trim().length > 0;
+    return getPasswordErrors(pass).length === 0;
+  };
+
+  const isFormValid = () => {
+    if (!isEmailValid(email)) return false;
+    if (!isPasswordValid(password)) return false;
+    if (mode === 'register' && !username.trim()) return false;
+    return true;
+  };
   const [snackbarVisible, setSnackbarVisible] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
 
@@ -83,7 +109,11 @@ export default function LoginScreen() {
           keyboardType="email-address"
           style={styles.input}
           testID="email-input"
+          error={email.length > 0 && !isEmailValid(email)}
         />
+        <HelperText type="error" visible={email.length > 0 && !isEmailValid(email)}>
+          Invalid email address.
+        </HelperText>
 
         {mode === 'register' && (
           <TextInput
@@ -105,13 +135,19 @@ export default function LoginScreen() {
           secureTextEntry={true}
           style={styles.input}
           testID="password-input"
+          error={mode === 'register' && password.length > 0 && !isPasswordValid(password)}
         />
+        {mode === 'register' && password.length > 0 && !isPasswordValid(password) && (
+          <HelperText type="error" visible={true}>
+            {getPasswordErrors(password).join(', ')}
+          </HelperText>
+        )}
 
         <Button
           mode="contained"
           onPress={handleAuth}
           loading={isLoading}
-          disabled={isLoading}
+          disabled={isLoading || !isFormValid()}
           style={styles.button}
           testID="auth-button"
         >
@@ -149,10 +185,10 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   input: {
-    marginBottom: 16,
+    marginBottom: 4,
   },
   button: {
-    marginTop: 8,
+    marginTop: 16,
     paddingVertical: 6,
   },
   segmentedButton: {
