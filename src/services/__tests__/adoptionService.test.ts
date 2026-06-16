@@ -13,7 +13,7 @@ describe('adoptionService', () => {
   });
 
   it('initiateAdoption builds correct payload', async () => {
-    await initiateAdoption(10, 'user_1');
+    await initiateAdoption(10, 'user_1', null);
     expect(global.fetch).toHaveBeenCalledWith('http://localhost:8000/api/v1/adoptions/initiate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -22,7 +22,7 @@ describe('adoptionService', () => {
   });
 
   it('finalizeAdoption builds correct payload', async () => {
-    await finalizeAdoption(1);
+    await finalizeAdoption(1, null);
     expect(global.fetch).toHaveBeenCalledWith('http://localhost:8000/api/v1/adoptions/1/finalize', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },

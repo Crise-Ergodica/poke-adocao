@@ -15,6 +15,7 @@ export function MainTabs() {
 
   return (
     <Tab.Navigator
+      id={undefined}
       screenOptions={{
         headerShown: false, // Ocultamos o header nativo para fazer o nosso customizado MD3
         tabBarActiveTintColor: theme.colors.primary,
