@@ -186,3 +186,27 @@ def return_pokemon(db: Session, pokemon_entity_id: int, user: User) -> Adoption:
     db.refresh(adoption)
 
     return adoption
+
+
+def get_available_adoptions(db: Session, pokemon_id: int = None, provider_name: str = None) -> list[Adoption]:
+    """
+    Fetches available adoptions (status NEW) optionally filtered by Pokemon ID and provider name.
+
+    Args:
+        db (Session): Database session.
+        pokemon_id (int, optional): The ID of the Pokemon to filter by. Defaults to None.
+        provider_name (str, optional): The user ID of the provider to filter by. Defaults to None.
+
+    Returns:
+        list[Adoption]: A list of available adoptions matching the criteria.
+    """
+    query = db.query(Adoption).join(PokemonEntity).filter(Adoption.status == AdoptionStatus.NEW)
+
+    if pokemon_id is not None:
+        query = query.filter(PokemonEntity.pokemon_id == pokemon_id)
+
+    if provider_name is not None:
+        query = query.outerjoin(User, Adoption.provider_user_id == User.user_id)
+        query = query.filter(User.user_id.ilike(f"%{provider_name}%"))
+
+    return query.all()
