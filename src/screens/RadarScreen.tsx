@@ -88,54 +88,56 @@ export default function RadarScreen() {
           {loadingRadar && <ActivityIndicator animating={true} style={styles.loader} />}
 
           <View style={{ flexDirection: isDesktop ? 'row' : 'column', gap: 16 }}>
-            <Card style={[styles.card, { flex: isDesktop ? 1 : undefined }]}>
-              <Card.Title title="Wild Pokemon Nearby" />
-              <Card.Content>
-                {nearbyPokemon.length === 0 ? (
-                  <Text>No Pokemon nearby.</Text>
-                ) : (
-                  nearbyPokemon.map((pokemon, index) => (
-                    <List.Item
-                      key={index}
+            <View style={{ flex: isDesktop ? 1 : undefined }}>
+              <Text variant="titleLarge" style={styles.sectionTitle}>Wild Pokemon Nearby</Text>
+              {nearbyPokemon.length === 0 ? (
+                <Text style={styles.emptyText}>No Pokemon nearby.</Text>
+              ) : (
+                nearbyPokemon.map((pokemon, index) => (
+                  <Card key={index} style={styles.card} mode="elevated">
+                    <Card.Title
                       title={`Pokemon ID: ${pokemon.pokemon_id}`}
-                      description={`Lat: ${pokemon.latitude.toFixed(4)}, Lon: ${pokemon.longitude.toFixed(4)}`}
+                      titleVariant="titleMedium"
+                      subtitle={`Lat: ${pokemon.latitude.toFixed(4)}, Lon: ${pokemon.longitude.toFixed(4)}`}
+                      subtitleVariant="bodyMedium"
                       left={props => (
                         pokemon.sprite_url ?
-                        <Avatar.Image size={40} source={{ uri: pokemon.sprite_url }} style={{backgroundColor: 'transparent'}} /> :
-                        <Avatar.Icon size={40} icon="help" />
+                        <Avatar.Image {...props} source={{ uri: pokemon.sprite_url }} style={{backgroundColor: 'transparent'}} /> :
+                        <Avatar.Icon {...props} icon="help" />
                       )}
                       right={props => (
-                        <Button mode="contained" onPress={() => handleAdopt(pokemon.id)}>
+                        <Button mode="contained" onPress={() => handleAdopt(pokemon.id)} style={styles.actionButton}>
                           Acolher
                         </Button>
                       )}
                     />
-                  ))
-                )}
-              </Card.Content>
-            </Card>
+                  </Card>
+                ))
+              )}
+            </View>
 
-            <Card style={[styles.card, { flex: isDesktop ? 1 : undefined }]}>
-              <Card.Title title="Nearby Trainers" />
-              <Card.Content>
-                {nearbyUsers.length === 0 ? (
-                  <Text>No trainers nearby.</Text>
-                ) : (
-                  nearbyUsers.map((user, index) => (
-                    <List.Item
-                      key={index}
+            <View style={{ flex: isDesktop ? 1 : undefined }}>
+              <Text variant="titleLarge" style={styles.sectionTitle}>Nearby Trainers</Text>
+              {nearbyUsers.length === 0 ? (
+                <Text style={styles.emptyText}>No trainers nearby.</Text>
+              ) : (
+                nearbyUsers.map((user, index) => (
+                  <Card key={index} style={styles.card} mode="elevated">
+                    <Card.Title
                       title={`Trainer: ${user.user_id}`}
-                      description={`Lat: ${user.latitude.toFixed(4)}, Lon: ${user.longitude.toFixed(4)}`}
+                      titleVariant="titleMedium"
+                      subtitle={`Lat: ${user.latitude.toFixed(4)}, Lon: ${user.longitude.toFixed(4)}`}
+                      subtitleVariant="bodyMedium"
                       left={props => (
                         user.icon_url ?
-                        <Avatar.Image size={40} source={{ uri: user.icon_url }} /> :
-                        <Avatar.Icon size={40} icon="account" />
+                        <Avatar.Image {...props} source={{ uri: user.icon_url }} /> :
+                        <Avatar.Icon {...props} icon="account" />
                       )}
                     />
-                  ))
-                )}
-              </Card.Content>
-            </Card>
+                  </Card>
+                ))
+              )}
+            </View>
           </View>
         </View>
       </ScrollView>
@@ -167,10 +169,21 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     textAlign: 'center',
   },
+  sectionTitle: {
+    marginBottom: 12,
+    fontWeight: 'bold',
+  },
   card: {
     marginBottom: 16,
   },
+  emptyText: {
+    marginBottom: 16,
+    fontStyle: 'italic',
+  },
   loader: {
     marginBottom: 16,
+  },
+  actionButton: {
+    marginRight: 16,
   }
 });

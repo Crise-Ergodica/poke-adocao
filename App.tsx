@@ -1,3 +1,4 @@
+// Author: Aurora Drumond Costa Magalhães
 // App.tsx
 import React from 'react';
 import { PaperProvider } from 'react-native-paper';

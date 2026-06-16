@@ -1,8 +1,10 @@
+// Author: Aurora Drumond Costa Magalhães
 // src/theme/index.ts
 import { MD3LightTheme as DefaultTheme } from 'react-native-paper';
 
 export const theme = {
   ...DefaultTheme,
+  roundness: 3, // MD3 compatible rounded corners (approx 12px based on Paper internals)
   colors: {
     ...DefaultTheme.colors,
     // Cores extraídas do seu design no Figma
