@@ -1,8 +1,11 @@
+/**
+ * Author: Aurora Drumond Costa Magalhães
+ */
 import React, { useState } from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
 import { Card, Text, Button, TextInput, Snackbar, useTheme, Avatar } from 'react-native-paper';
 import { useAuth } from '../store/AuthContext';
-import { updateIcon } from '../services/authService';
+import { updateIcon, updateUsername, updatePassword, updateCompanion } from '../services/authService';
 
 const STATIC_AVATARS = [
   'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/1.png',
@@ -13,8 +16,11 @@ const STATIC_AVATARS = [
 
 export default function ProfileScreen() {
   const theme = useTheme();
-  const { userId, iconUrl, setIconUrl, token } = useAuth();
+  const { userId, setUserId, iconUrl, setIconUrl, companionPokemonId, setCompanionPokemonId, token } = useAuth();
   const [inputUrl, setInputUrl] = useState('');
+  const [usernameInput, setUsernameInput] = useState('');
+  const [passwordInput, setPasswordInput] = useState('');
+  const [companionInput, setCompanionInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [snackbarVisible, setSnackbarVisible] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
@@ -43,6 +49,54 @@ export default function ProfileScreen() {
     }
   };
 
+  const handleUpdateUsername = async () => {
+    if (!userId || !token) return;
+    setLoading(true);
+    try {
+      await updateUsername(userId, usernameInput, token);
+      setUserId(usernameInput);
+      showSnackbar('Username updated successfully!');
+      setUsernameInput('');
+    } catch (error: any) {
+      showSnackbar(error.message || 'Failed to update username.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUpdatePassword = async () => {
+    if (!userId || !token) return;
+    setLoading(true);
+    try {
+      await updatePassword(userId, passwordInput, token);
+      showSnackbar('Password updated successfully!');
+      setPasswordInput('');
+    } catch (error: any) {
+      showSnackbar(error.message || 'Failed to update password.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUpdateCompanion = async () => {
+    if (!userId || !token) return;
+    setLoading(true);
+    try {
+      const parsedId = parseInt(companionInput);
+      if (isNaN(parsedId) || parsedId < 1 || parsedId > 1025) {
+         throw new Error('Please enter a valid PokeAPI ID between 1 and 1025.');
+      }
+      await updateCompanion(userId, parsedId, token);
+      setCompanionPokemonId(parsedId);
+      showSnackbar('Companion Pokemon updated successfully!');
+      setCompanionInput('');
+    } catch (error: any) {
+      showSnackbar(error.message || 'Failed to update companion.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
@@ -51,12 +105,90 @@ export default function ProfileScreen() {
         <Card style={styles.card}>
           <Card.Content style={styles.centerContent}>
             <Text variant="titleMedium" style={styles.label}>Current Avatar</Text>
-            {iconUrl ? (
-              <Avatar.Image size={100} source={{ uri: iconUrl }} />
-            ) : (
-              <Avatar.Icon size={100} icon="account" />
-            )}
+            <View style={styles.avatarRow}>
+              {iconUrl ? (
+                <Avatar.Image size={100} source={{ uri: iconUrl }} />
+              ) : (
+                <Avatar.Icon size={100} icon="account" />
+              )}
+              {companionPokemonId && (
+                <Avatar.Image
+                  size={100}
+                  source={{ uri: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${companionPokemonId}.png` }}
+                  style={{ backgroundColor: 'transparent', marginLeft: 16 }}
+                />
+              )}
+            </View>
             <Text variant="bodyLarge" style={styles.userIdText}>Trainer: {userId}</Text>
+          </Card.Content>
+        </Card>
+
+        <Card style={styles.card}>
+          <Card.Title title="Update Details" />
+          <Card.Content>
+            <TextInput
+              label="New Username"
+              value={usernameInput}
+              onChangeText={setUsernameInput}
+              mode="outlined"
+              style={styles.input}
+              disabled={loading}
+              testID="username-input"
+            />
+            <Button
+              mode="contained"
+              onPress={handleUpdateUsername}
+              loading={loading}
+              disabled={!usernameInput || loading}
+              style={styles.actionButton}
+            >
+              Update Username
+            </Button>
+
+            <TextInput
+              label="New Password"
+              value={passwordInput}
+              onChangeText={setPasswordInput}
+              mode="outlined"
+              secureTextEntry
+              style={styles.input}
+              disabled={loading}
+              testID="password-input"
+            />
+            <Button
+              mode="contained"
+              onPress={handleUpdatePassword}
+              loading={loading}
+              disabled={!passwordInput || loading}
+              style={styles.actionButton}
+            >
+              Update Password
+            </Button>
+          </Card.Content>
+        </Card>
+
+        <Card style={styles.card}>
+          <Card.Title title="Companion Pokemon" />
+          <Card.Content>
+            <TextInput
+              label="PokeAPI ID (1 to 1025)"
+              value={companionInput}
+              onChangeText={setCompanionInput}
+              mode="outlined"
+              keyboardType="numeric"
+              style={styles.input}
+              disabled={loading}
+              testID="companion-input"
+            />
+            <Button
+              mode="contained"
+              onPress={handleUpdateCompanion}
+              loading={loading}
+              disabled={!companionInput || loading}
+              style={styles.actionButton}
+            >
+              Set Companion
+            </Button>
           </Card.Content>
         </Card>
 
@@ -148,5 +280,13 @@ const styles = StyleSheet.create({
   },
   input: {
     marginBottom: 16,
+  },
+  actionButton: {
+    marginBottom: 16,
+  },
+  avatarRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

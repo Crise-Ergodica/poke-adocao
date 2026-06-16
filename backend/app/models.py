@@ -112,8 +112,8 @@ class Adoption(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     pokemon_entity_id = Column(Integer, ForeignKey('pokemon_entities.id'), index=True)
-    provider_user_id = Column(String, ForeignKey('users.user_id'), nullable=True)
-    receiver_user_id = Column(String, ForeignKey('users.user_id'))
+    provider_user_id = Column(String, ForeignKey('users.user_id', onupdate='CASCADE'), nullable=True)
+    receiver_user_id = Column(String, ForeignKey('users.user_id', onupdate='CASCADE'))
     status = Column(Enum(AdoptionStatus), default=AdoptionStatus.NEW)
     created_at = Column(DateTime)
     updated_at = Column(DateTime)
