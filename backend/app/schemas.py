@@ -33,6 +33,33 @@ class UserLogin(BaseModel):
     email: str
     password: str
 
+class UsernameUpdate(BaseModel):
+    """
+    Schema for updating a user's username.
+
+    Attributes:
+        username (str): The user's new username.
+    """
+    username: str
+
+class PasswordUpdate(BaseModel):
+    """
+    Schema for updating a user's password.
+
+    Attributes:
+        password (str): The user's new password.
+    """
+    password: str
+
+class CompanionUpdate(BaseModel):
+    """
+    Schema for updating a user's companion pokemon.
+
+    Attributes:
+        companion_pokemon_id (Optional[int]): The PokeAPI ID of the companion pokemon.
+    """
+    companion_pokemon_id: Optional[int] = Field(default=None, ge=1, le=1025)
+
 class Token(BaseModel):
     """
     Schema for JWT token response.
@@ -84,12 +111,15 @@ class UserSchema(BaseModel):
         user_id (str): Unique user identifier.
         latitude (float): User's latitude.
         longitude (float): User's longitude.
+        icon_url (Optional[str]): URL of the user's icon.
+        companion_pokemon_id (Optional[int]): The PokeAPI ID of the companion pokemon.
         party (List[UserPokemonSchema]): The user's party of Pokemon.
     """
     user_id: str
     latitude: float
     longitude: float
     icon_url: Optional[str] = None
+    companion_pokemon_id: Optional[int] = None
     party: List[UserPokemonSchema] = []
 
     class Config:
