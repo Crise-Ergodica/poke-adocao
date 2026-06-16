@@ -1,8 +1,9 @@
+"""Author: Aurora Drumond Costa Magalhães"""
+
 import httpx
 from typing import List, Optional
-"""
-Author: Aurora Drumond Costa Magalhães
 
+"""
 Main FastAPI application defining spatial endpoints.
 """
 
@@ -12,7 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from datetime import datetime
 from app.models import Base, User, PokemonEntity
-from app.schemas import LocationUpdate, NearbyResponse, UserSchema, PokemonEntitySchema, AdoptionCreate, AdoptionSchema, AdoptionUpdateStatus, UserCreate, UserLogin, Token
+from app.schemas import LocationUpdate, NearbyResponse, UserSchema, PokemonEntitySchema, AdoptionCreate, AdoptionSchema, AdoptionUpdateStatus, UserCreate, UserLogin, Token, PokemonRenameRequest
 from app.database import engine, get_db, SessionLocal
 from app.spatial_service import calculate_bounding_box, haversine_distance
 from app.pokeapi_service import spawn_wild_pokemon
@@ -41,7 +42,7 @@ async def pokemon_spawner_task():
     radius_km = 2.0
 
     while True:
-        await asyncio.sleep(300) # 5 minutes
+        await asyncio.sleep(180) # 3 minutes
 
         # Generate random coordinates within radius
         # 1 degree lat is ~111km. So 2km is ~0.018 degrees.
@@ -174,7 +175,7 @@ def login_endpoint(request: UserLogin, db: Session = Depends(get_db)):
             headers={"WWW-Authenticate": "Bearer"},
         )
     access_token = create_access_token(data={"sub": user.email})
-    return {"access_token": access_token, "token_type": "bearer"}
+    return {"access_token": access_token, "token_type": "bearer", "user_id": user.user_id}
 
 @app.post("/api/v1/location/update")
 def update_location(location: LocationUpdate, db: Session = Depends(get_db)):
@@ -254,7 +255,7 @@ def update_user_icon(
 @app.get("/api/v1/map/nearby", response_model=NearbyResponse)
 def get_nearby(latitude: float, longitude: float, db: Session = Depends(get_db)):
     """
-    Get all users and pokemon within a 50m radius.
+    Get all users and pokemon within a 150m radius.
     First filters by bounding box for efficiency, then by exact Haversine distance.
 
     Args:
@@ -265,7 +266,7 @@ def get_nearby(latitude: float, longitude: float, db: Session = Depends(get_db))
     Returns:
         NearbyResponse: An object containing nearby users and pokemon.
     """
-    distance_limit = 50.0
+    distance_limit = 150.0
     min_lat, max_lat, min_lon, max_lon = calculate_bounding_box(latitude, longitude, distance_limit)
 
     # Bounding box filter
@@ -302,6 +303,79 @@ def get_nearby(latitude: float, longitude: float, db: Session = Depends(get_db))
 class SpawnRequest(BaseModel):
     latitude: float
     longitude: float
+
+@app.patch("/api/v1/users/pokemon/{id}/name")
+def rename_pokemon(
+    id: int,
+    request: PokemonRenameRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Rename a pokemon in the user's party.
+
+    Args:
+        id (int): The ID of the pokemon in the user's party.
+        request (PokemonRenameRequest): The rename request data.
+        db (Session): The database session.
+        current_user (User): The authenticated user.
+
+    Raises:
+        HTTPException: If the pokemon is not found or user is not authorized.
+
+    Returns:
+        dict: A success message.
+    """
+    from app.models import UserPokemon
+    user_pokemon = db.query(UserPokemon).filter(UserPokemon.id == id).first()
+    if not user_pokemon:
+        raise HTTPException(status_code=404, detail="Pokemon not found in party")
+    if user_pokemon.user.user_id != current_user.user_id:
+        raise HTTPException(status_code=403, detail="Not authorized to rename this pokemon")
+
+    try:
+        # Since we cannot add a schema field to UserPokemon, but must rename
+        user_pokemon.name = request.name
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail="Failed to rename pokemon")
+
+    return {"message": "Pokemon renamed successfully"}
+
+
+@app.delete("/api/v1/users/pokemon/{id}")
+def release_pokemon(
+    id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Abandon or release a pokemon from the user's party.
+
+    Args:
+        id (int): The ID of the pokemon in the user's party.
+        db (Session): The database session.
+        current_user (User): The authenticated user.
+
+    Raises:
+        HTTPException: If the pokemon is not found or user is not authorized.
+
+    Returns:
+        dict: A success message.
+    """
+    from app.models import UserPokemon
+    user_pokemon = db.query(UserPokemon).filter(UserPokemon.id == id).first()
+    if not user_pokemon:
+        raise HTTPException(status_code=404, detail="Pokemon not found in party")
+    if user_pokemon.user.user_id != current_user.user_id:
+        raise HTTPException(status_code=403, detail="Not authorized to release this pokemon")
+
+    db.delete(user_pokemon)
+    db.commit()
+
+    return {"message": "Pokemon released successfully"}
+
 
 @app.post("/api/v1/map/spawn", response_model=PokemonEntitySchema)
 async def spawn_pokemon_endpoint(request: SpawnRequest, db: Session = Depends(get_db)):
