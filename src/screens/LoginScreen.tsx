@@ -8,12 +8,12 @@ import { jwtDecode } from 'jwt-decode';
 export default function LoginScreen() {
   const theme = useTheme();
   const { setUserId, setToken } = useAuth();
-
+  
   const [mode, setMode] = useState('login'); // 'login' or 'register'
   const [email, setEmail] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-
+  
   const [isLoading, setIsLoading] = useState(false);
   const [snackbarVisible, setSnackbarVisible] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
@@ -37,9 +37,9 @@ export default function LoginScreen() {
         await register(email.trim(), username.trim(), password);
         // Automatically login after successful registration
       }
-
+      
       const tokenData = await login(email.trim(), password);
-
+      
       setToken(tokenData.access_token);
       setUserId(mode === 'register' ? username.trim() : email.trim().split('@')[0]);
 

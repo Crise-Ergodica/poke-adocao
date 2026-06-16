@@ -81,13 +81,13 @@ def register_user(db: Session, user_create: UserCreate) -> UserSchema:
     existing_user_email = db.query(User).filter(User.email == user_create.email).first()
     if existing_user_email:
         raise HTTPException(status_code=400, detail="Email already registered")
-
+        
     existing_user_id = db.query(User).filter(User.user_id == user_create.username).first()
     if existing_user_id:
         raise HTTPException(status_code=400, detail="Username already taken")
 
     hashed_pwd = get_password_hash(user_create.password)
-
+    
     new_user = User(
         email=user_create.email,
         hashed_password=hashed_pwd,

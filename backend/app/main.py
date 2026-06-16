@@ -169,9 +169,9 @@ class IconUpdateRequest(BaseModel):
 
 @app.patch("/api/v1/users/{user_id}/icon", response_model=UserSchema)
 def update_user_icon(
-    user_id: str,
-    request: IconUpdateRequest,
-    db: Session = Depends(get_db),
+    user_id: str, 
+    request: IconUpdateRequest, 
+    db: Session = Depends(get_db), 
     current_user: User = Depends(get_current_user)
 ):
     """
@@ -271,8 +271,8 @@ async def spawn_pokemon_endpoint(request: SpawnRequest, db: Session = Depends(ge
 
 @app.post("/api/v1/adoptions/initiate", response_model=AdoptionSchema)
 def initiate_adoption_endpoint(
-    adoption_create: AdoptionCreate,
-    db: Session = Depends(get_db),
+    adoption_create: AdoptionCreate, 
+    db: Session = Depends(get_db), 
     current_user: User = Depends(get_current_user)
 ):
     """

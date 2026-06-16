@@ -22,7 +22,7 @@ describe('LoginScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
-
+  
   it('allows user to enter email and password and submit', async () => {
     // Setup the mock response for the login service
     (login as jest.Mock).mockResolvedValueOnce({ access_token: 'fake_token' });

@@ -32,7 +32,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         const storedToken = await SecureStore.getItemAsync('token');
         const storedUserId = await SecureStore.getItemAsync('userId');
         const storedIconUrl = await SecureStore.getItemAsync('iconUrl');
-
+        
         if (storedToken && storedUserId) {
           setToken(storedToken);
           setUserId(storedUserId);
@@ -79,12 +79,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{
-      userId,
-      setUserId: handleSetUserId,
-      iconUrl,
-      setIconUrl: handleSetIconUrl,
-      token,
+    <AuthContext.Provider value={{ 
+      userId, 
+      setUserId: handleSetUserId, 
+      iconUrl, 
+      setIconUrl: handleSetIconUrl, 
+      token, 
       setToken: handleSetToken,
       logout
     }}>

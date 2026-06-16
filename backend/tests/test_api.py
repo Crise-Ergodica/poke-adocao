@@ -136,7 +136,7 @@ def test_update_user_icon_authorized(client, db_session):
         "password": "pass"
     })
     token = res.json()["access_token"]
-
+    
     # Update icon
     response = client.patch(
         "/api/v1/users/icon_trainer/icon",
@@ -160,7 +160,7 @@ def test_update_user_icon_unauthorized(client, db_session):
         "password": "pass"
     })
     token = res.json()["access_token"]
-
+    
     response = client.patch(
         "/api/v1/users/some_other_user/icon",
         json={"icon_url": "http://example.com/icon.png"},

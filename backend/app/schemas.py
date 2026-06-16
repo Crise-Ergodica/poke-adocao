@@ -36,7 +36,7 @@ class UserLogin(BaseModel):
 class Token(BaseModel):
     """
     Schema for JWT token response.
-
+    
     Attributes:
         access_token (str): The JWT string.
         token_type (str): The type of token (e.g., 'bearer').
