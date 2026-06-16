@@ -6,8 +6,22 @@ import { useUserLocation } from '../hooks/useUserLocation';
 import { getNearby } from '../services/pokemonService';
 import { initiateAdoption, finalizeAdoption } from '../services/adoptionService';
 import { useAuth } from '../store/AuthContext';
+import { useNavigation } from '@react-navigation/native';
+
+function getDistanceInMeters(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371e3; // Earth radius in meters
+  const rad = Math.PI / 180;
+  const dLat = (lat2 - lat1) * rad;
+  const dLon = (lon2 - lon1) * rad;
+  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(lat1 * rad) * Math.cos(lat2 * rad) *
+            Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
 
 export default function RadarScreen() {
+  const navigation = useNavigation<any>();
   const theme = useTheme();
   const { width } = useWindowDimensions();
   const isDesktop = width > 768;
@@ -56,6 +70,7 @@ export default function RadarScreen() {
       await finalizeAdoption(adoption.id, token);
       showSnackbar("Pokemon adopted successfully!");
       fetchNearby(); // Refresh lists
+      navigation.navigate('Party');
     } catch (error: any) {
       showSnackbar(error.message);
     }
@@ -93,26 +108,31 @@ export default function RadarScreen() {
               {nearbyPokemon.length === 0 ? (
                 <Text style={styles.emptyText}>No Pokemon nearby.</Text>
               ) : (
-                nearbyPokemon.map((pokemon, index) => (
-                  <Card key={index} style={styles.card} mode="elevated">
-                    <Card.Title
-                      title={`Pokemon ID: ${pokemon.pokemon_id}`}
-                      titleVariant="titleMedium"
-                      subtitle={`Lat: ${pokemon.latitude.toFixed(4)}, Lon: ${pokemon.longitude.toFixed(4)}`}
-                      subtitleVariant="bodyMedium"
-                      left={props => (
-                        pokemon.sprite_url ?
-                        <Avatar.Image {...props} source={{ uri: pokemon.sprite_url }} style={{backgroundColor: 'transparent'}} /> :
-                        <Avatar.Icon {...props} icon="help" />
-                      )}
-                      right={props => (
-                        <Button mode="contained" onPress={() => handleAdopt(pokemon.id)} style={styles.actionButton}>
-                          Acolher
-                        </Button>
-                      )}
-                    />
-                  </Card>
-                ))
+                nearbyPokemon.map((pokemon, index) => {
+                  const dist = location ? getDistanceInMeters(location.latitude, location.longitude, pokemon.latitude, pokemon.longitude) : Infinity;
+                  const isTooFar = dist > 50;
+
+                  return (
+                    <Card key={index} style={styles.card} mode="elevated">
+                      <Card.Title
+                        title={isTooFar ? "Unknown Signal" : `Pokemon ID: ${pokemon.pokemon_id}`}
+                        titleVariant="titleMedium"
+                        subtitle={`Lat: ${pokemon.latitude.toFixed(4)}, Lon: ${pokemon.longitude.toFixed(4)}`}
+                        subtitleVariant="bodyMedium"
+                        left={props => (
+                          (pokemon.sprite_url && !isTooFar) ?
+                          <Avatar.Image {...props} source={{ uri: pokemon.sprite_url }} style={{backgroundColor: 'transparent'}} /> :
+                          <Avatar.Icon {...props} icon="help" />
+                        )}
+                        right={props => (
+                          <Button mode="contained" onPress={() => handleAdopt(pokemon.id)} style={styles.actionButton} disabled={isTooFar}>
+                            {isTooFar ? "Aproxime-se" : "Acolher"}
+                          </Button>
+                        )}
+                      />
+                    </Card>
+                  );
+                })
               )}
             </View>
 
