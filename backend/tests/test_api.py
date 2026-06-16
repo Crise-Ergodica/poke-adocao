@@ -199,3 +199,48 @@ def test_initiate_adoption_authorized(client, db_session):
     )
     assert response.status_code == 200
     assert response.json()["receiver_user_id"] == "adopt_trainer"
+
+
+def test_return_pokemon_endpoint(client, db_session):
+    """
+    Test the return endpoint.
+    """
+    from app.adoption_service import create_adoption, transition_state
+    from app.models import AdoptionStatus
+
+    # Setup user
+    client.post("/api/v1/auth/register", json={
+        "email": "ret@example.com",
+        "username": "ret_trainer",
+        "password": "pass"
+    })
+    res = client.post("/api/v1/auth/login", json={
+        "email": "ret@example.com",
+        "password": "pass"
+    })
+    token = res.json()["access_token"]
+
+    # Get user to modify coordinates
+    user = db_session.query(User).filter(User.user_id == "ret_trainer").first()
+    user.latitude = 0.0
+    user.longitude = 0.0
+    db_session.commit()
+
+    # Create pokemon and adoption
+    from datetime import datetime
+    poke = PokemonEntity(pokemon_id=1, latitude=0.0, longitude=0.0, created_at=datetime.utcnow(), expires_at=datetime.utcnow())
+    db_session.add(poke)
+    db_session.commit()
+    db_session.refresh(poke)
+
+    adoption = create_adoption(db_session, pokemon_entity_id=poke.id, receiver_user_id="ret_trainer")
+    transition_state(db_session, adoption.id, AdoptionStatus.PENDING_MEETUP)
+    transition_state(db_session, adoption.id, AdoptionStatus.ADOPTED)
+
+    response = client.post(
+        f"/api/v1/adoptions/{poke.id}/return",
+        headers={"Authorization": f"Bearer {token}"}
+    )
+    assert response.status_code == 200
+    assert response.json()["status"] == "NEW"
+    assert response.json()["provider_user_id"] == "ret_trainer"

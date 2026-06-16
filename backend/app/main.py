@@ -4,16 +4,17 @@ Author: Aurora Drumond Costa Magalhães
 Main FastAPI application defining spatial endpoints.
 """
 
+import asyncio
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from datetime import datetime
 from app.models import Base, User, PokemonEntity
 from app.schemas import LocationUpdate, NearbyResponse, UserSchema, PokemonEntitySchema, AdoptionCreate, AdoptionSchema, AdoptionUpdateStatus, UserCreate, UserLogin, Token
-from app.database import engine, get_db
+from app.database import engine, get_db, SessionLocal
 from app.spatial_service import calculate_bounding_box, haversine_distance
 from app.pokeapi_service import spawn_wild_pokemon
-from app.adoption_service import create_adoption, transition_state
+from app.adoption_service import create_adoption, transition_state, return_pokemon
 from app.models import AdoptionStatus
 from pydantic import BaseModel
 from app.auth_service import register_user, authenticate_user, create_access_token, SECRET_KEY, ALGORITHM
@@ -24,6 +25,52 @@ import jwt
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
+
+
+async def pokemon_spawner_task():
+    """
+    Background task to spawn wild Pokemon every 5 minutes
+    within a 2km radius of Timoteo, MG (-19.5312, -42.6105).
+    """
+    import random
+    import math
+    base_lat = -19.5312
+    base_lon = -42.6105
+    radius_km = 2.0
+
+    while True:
+        await asyncio.sleep(300) # 5 minutes
+
+        # Generate random coordinates within radius
+        # 1 degree lat is ~111km. So 2km is ~0.018 degrees.
+        # Use simple approximation
+        r = radius_km / 111.320
+        u = random.random()
+        v = random.random()
+        w = r * math.sqrt(u)
+        t = 2 * math.pi * v
+        x = w * math.cos(t)
+        y = w * math.sin(t)
+
+        # Adjust longitude for latitude
+        x = x / math.cos(math.radians(base_lat))
+
+        new_lat = base_lat + y
+        new_lon = base_lon + x
+
+        db = SessionLocal()
+        try:
+            await spawn_wild_pokemon(db, new_lat, new_lon)
+        except Exception as e:
+            # Silently handle or log errors so the loop doesn't crash
+            pass
+        finally:
+            db.close()
+
+@app.on_event("startup")
+async def startup_event():
+    asyncio.create_task(pokemon_spawner_task())
+
 
 app.add_middleware(
     CORSMiddleware,
@@ -313,6 +360,33 @@ def finalize_adoption_endpoint(adoption_id: int, db: Session = Depends(get_db)):
     """
     try:
         adoption = transition_state(db, adoption_id, AdoptionStatus.ADOPTED)
+        return adoption
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@app.post("/api/v1/adoptions/{pokemon_entity_id}/return", response_model=AdoptionSchema)
+def return_pokemon_endpoint(
+    pokemon_entity_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Return a fostered Pokemon to the map.
+
+    Args:
+        pokemon_entity_id (int): The ID of the Pokemon entity to return.
+        db (Session): The database session.
+        current_user (User): The authenticated user.
+
+    Raises:
+        HTTPException: If the user cannot return the Pokemon.
+
+    Returns:
+        AdoptionSchema: The updated adoption object.
+    """
+    try:
+        adoption = return_pokemon(db, pokemon_entity_id, current_user)
         return adoption
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
