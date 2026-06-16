@@ -12,7 +12,7 @@ export function RootNavigator() {
   const isAuthenticated = !!userId;
 
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Navigator id={undefined} screenOptions={{ headerShown: false }}>
       {isAuthenticated ? (
         <Stack.Screen name="MainTabs" component={MainTabs} />
       ) : (

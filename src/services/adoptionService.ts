@@ -52,3 +52,24 @@ export const finalizeAdoption = async (adoption_id: number, token: string | null
 
   return response.json();
 };
+
+export const returnPokemon = async (pokemonEntityId: number, token: string) => {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  const response = await fetch(`${API_URL}/${pokemonEntityId}/return`, {
+    method: 'POST',
+    headers,
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => null);
+    throw new Error(errorData?.detail || 'Failed to return pokemon');
+  }
+
+  return response.json();
+};
