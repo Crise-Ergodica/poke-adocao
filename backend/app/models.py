@@ -1,8 +1,10 @@
 """
 Author: Aurora Drumond Costa Magalhães
-
+"""
+"""
 Database models for the application.
 """
+
 
 import enum
 from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, Enum, Boolean
@@ -61,6 +63,7 @@ class UserPokemon(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey('users.id'))
     pokemon_id = Column(Integer, index=True)
+    pokemon_entity_id = Column(Integer, ForeignKey('pokemon_entities.id'), nullable=True)
 
     user = relationship("User", back_populates="party")
 

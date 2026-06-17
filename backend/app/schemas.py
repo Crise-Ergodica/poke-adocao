@@ -1,8 +1,10 @@
 """
 Author: Aurora Drumond Costa Magalhães
-
+"""
+"""
 Pydantic schemas for the application API.
 """
+
 
 from pydantic import BaseModel, Field
 from typing import List, Optional
@@ -216,6 +218,7 @@ class AdoptionSchema(BaseModel):
     status: AdoptionStatus
     created_at: datetime
     updated_at: datetime
+    pokemon: Optional[PokemonEntitySchema] = None
 
     class Config:
         from_attributes = True
