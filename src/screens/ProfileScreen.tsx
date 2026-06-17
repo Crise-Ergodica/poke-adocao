@@ -5,7 +5,12 @@ import React, { useState } from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
 import { Card, Text, Button, TextInput, Snackbar, useTheme, Avatar } from 'react-native-paper';
 import { useAuth } from '../store/AuthContext';
-import { updateIcon, updateUsername, updatePassword, updateCompanion } from '../services/authService';
+import {
+  updateIcon,
+  updateUsername,
+  updatePassword,
+  updateCompanion,
+} from '../services/authService';
 
 const STATIC_AVATARS = [
   'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/1.png',
@@ -16,14 +21,22 @@ const STATIC_AVATARS = [
 
 export default function ProfileScreen() {
   const theme = useTheme();
-  const { userId, setUserId, iconUrl, setIconUrl, companionPokemonId, setCompanionPokemonId, token } = useAuth();
-  
+  const {
+    userId,
+    setUserId,
+    iconUrl,
+    setIconUrl,
+    companionPokemonId,
+    setCompanionPokemonId,
+    token,
+  } = useAuth();
+
   const [inputUrl, setInputUrl] = useState('');
   const [usernameInput, setUsernameInput] = useState('');
   const [passwordInput, setPasswordInput] = useState('');
   const [companionInput, setCompanionInput] = useState('');
   const [loading, setLoading] = useState(false);
-  
+
   const [snackbarVisible, setSnackbarVisible] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
 
@@ -42,10 +55,10 @@ export default function ProfileScreen() {
     try {
       // 1. Envia para o banco de dados
       await updateIcon(userId, url, token);
-      
+
       // 2. Persiste fisicamente no SecureStore do celular
-      setIconUrl(url); 
-      
+      setIconUrl(url);
+
       showSnackbar('Profile icon updated successfully!');
       setInputUrl('');
     } catch (error: any) {
@@ -90,11 +103,11 @@ export default function ProfileScreen() {
     try {
       // O uso do radix (10) é estritamente necessário para garantir a conversão correta de base
       const parsedId = parseInt(companionInput, 10);
-      
+
       if (isNaN(parsedId) || parsedId < 1 || parsedId > 1025) {
-         throw new Error('Please enter a valid PokeAPI ID between 1 and 1025.');
+        throw new Error('Please enter a valid PokeAPI ID between 1 and 1025.');
       }
-      
+
       await updateCompanion(userId, parsedId, token);
       setCompanionPokemonId(parsedId); // Atualiza o contexto global e o armazenamento seguro
       showSnackbar('Companion Pokemon updated successfully!');
@@ -109,11 +122,15 @@ export default function ProfileScreen() {
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        <Text variant="headlineMedium" style={styles.title}>Profile Settings</Text>
+        <Text variant="headlineMedium" style={styles.title}>
+          Profile Settings
+        </Text>
 
         <Card style={styles.card}>
           <Card.Content style={styles.centerContent}>
-            <Text variant="titleMedium" style={styles.label}>Current Avatar</Text>
+            <Text variant="titleMedium" style={styles.label}>
+              Current Avatar
+            </Text>
             <View style={styles.avatarRow}>
               {iconUrl ? (
                 <Avatar.Image size={100} source={{ uri: iconUrl }} />
@@ -123,12 +140,16 @@ export default function ProfileScreen() {
               {companionPokemonId && (
                 <Avatar.Image
                   size={100}
-                  source={{ uri: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${companionPokemonId}.png` }}
+                  source={{
+                    uri: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${companionPokemonId}.png`,
+                  }}
                   style={{ backgroundColor: 'transparent', marginLeft: 16 }}
                 />
               )}
             </View>
-            <Text variant="bodyLarge" style={styles.userIdText}>Trainer: {userId}</Text>
+            <Text variant="bodyLarge" style={styles.userIdText}>
+              Trainer: {userId}
+            </Text>
           </Card.Content>
         </Card>
 
@@ -212,7 +233,11 @@ export default function ProfileScreen() {
                   disabled={loading}
                   style={styles.presetButton}
                 >
-                  <Avatar.Image size={50} source={{ uri: url }} style={{backgroundColor: 'transparent'}} />
+                  <Avatar.Image
+                    size={50}
+                    source={{ uri: url }}
+                    style={{ backgroundColor: 'transparent' }}
+                  />
                 </Button>
               ))}
             </View>
@@ -220,7 +245,7 @@ export default function ProfileScreen() {
         </Card>
 
         <Card style={styles.card}>
-          <Card.Title title="Or enter a custom URL" />
+          <Card.Title title="Or enter a custom URL (ending in .png, .jpg or .jpeg)" />
           <Card.Content>
             <TextInput
               label="Avatar Image URL"
