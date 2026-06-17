@@ -73,11 +73,11 @@ def test_get_nearby_entities(client, db_session):
     db.add(user2)
 
     # Insert Pokemon close by (~30m)
-    poke1 = PokemonEntity(pokemon_id=25, latitude=40.7128, longitude=-74.0058)
+    poke1 = PokemonEntity(pokemon_id=25, latitude=40.7128, longitude=-74.0058, is_shiny=False, gender="male", type_1="electric")
     db.add(poke1)
 
     # Insert Pokemon far away
-    poke2 = PokemonEntity(pokemon_id=1, latitude=40.7200, longitude=-74.0100)
+    poke2 = PokemonEntity(pokemon_id=1, latitude=40.7200, longitude=-74.0100, is_shiny=False, gender="female", type_1="grass", type_2="poison")
     db.add(poke2)
 
     db.commit()

@@ -30,16 +30,27 @@ async def spawn_wild_pokemon(db: Session, latitude: float, longitude: float) -> 
     # 2. Fetch data from PokeAPI
     url = f"https://pokeapi.co/api/v2/pokemon/{pokemon_id}"
     sprite_url = None
+    type_1 = "unknown"
+    type_2 = None
     try:
         async with httpx.AsyncClient() as client:
             response = await client.get(url)
             response.raise_for_status()
             data = response.json()
             sprite_url = data.get("sprites", {}).get("front_default")
+
+            types = data.get("types", [])
+            if len(types) > 0:
+                type_1 = types[0].get("type", {}).get("name", "unknown")
+            if len(types) > 1:
+                type_2 = types[1].get("type", {}).get("name")
     except httpx.RequestError as e:
         raise HTTPException(status_code=503, detail="PokeAPI is currently unavailable.")
     except httpx.HTTPStatusError as e:
         raise HTTPException(status_code=503, detail="PokeAPI returned an error.")
+
+    is_shiny = random.random() < 0.05
+    gender = random.choice(["male", "female", "genderless"])
 
     # 3. Add spatial jitter (~5 to 10 meters)
     # 1 degree of latitude is ~111,320 meters.
@@ -70,6 +81,10 @@ async def spawn_wild_pokemon(db: Session, latitude: float, longitude: float) -> 
         latitude=new_latitude,
         longitude=new_longitude,
         sprite_url=sprite_url,
+        is_shiny=is_shiny,
+        gender=gender,
+        type_1=type_1,
+        type_2=type_2,
         created_at=now,
         expires_at=expires_at
     )

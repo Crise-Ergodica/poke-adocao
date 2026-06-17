@@ -152,6 +152,10 @@ class PokemonEntitySchema(BaseModel):
     latitude: float
     longitude: float
     sprite_url: Optional[str] = None
+    is_shiny: bool
+    gender: str
+    type_1: str
+    type_2: Optional[str] = None
 
     class Config:
         from_attributes = True

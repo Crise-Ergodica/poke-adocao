@@ -5,7 +5,7 @@ Database models for the application.
 """
 
 import enum
-from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, Enum
+from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, Enum, Boolean
 from sqlalchemy.orm import declarative_base, relationship
 
 Base = declarative_base()
@@ -86,6 +86,10 @@ class PokemonEntity(Base):
     latitude = Column(Float)
     longitude = Column(Float)
     sprite_url = Column(String, nullable=True)
+    is_shiny = Column(Boolean, default=False)
+    gender = Column(String)
+    type_1 = Column(String)
+    type_2 = Column(String, nullable=True)
     created_at = Column(DateTime)
     expires_at = Column(DateTime)
     version_id = Column(Integer, nullable=False, default=1)
