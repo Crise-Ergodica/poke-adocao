@@ -1,10 +1,10 @@
-// Author: Aurora Drumond Costa Magalhães
+// Author: Aurora Drumond Magalhães, Ana Clara de Souza e Kayke Wellington
 // App.tsx
 import React from 'react';
 import { PaperProvider } from 'react-native-paper';
 import { NavigationContainer } from '@react-navigation/native';
 import { theme } from './src/theme';
-import { RootNavigator } from './src/navigation/RootNavigator'; 
+import { RootNavigator } from './src/navigation/RootNavigator';
 import { AuthProvider } from './src/store/AuthContext';
 
 export default function App() {

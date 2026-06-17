@@ -1,5 +1,5 @@
 /**
- * Author: Aurora Drumond Costa Magalhães
+ * Author: Aurora Drumond Magalhães, Ana Clara de Souza e Kayke Wellington
  *
  * Service to handle adoption API calls.
  */
@@ -14,7 +14,10 @@ export interface GetAvailableAdoptionsParams {
   gender?: string;
 }
 
-export const getAvailableAdoptions = async (params: GetAvailableAdoptionsParams, token: string | null) => {
+export const getAvailableAdoptions = async (
+  params: GetAvailableAdoptionsParams,
+  token: string | null,
+) => {
   const queryParams = new URLSearchParams();
   if (params.pokemon_name) queryParams.append('pokemon_name', params.pokemon_name);
   if (params.provider_name) queryParams.append('provider_name', params.provider_name);
@@ -44,7 +47,12 @@ export const getAvailableAdoptions = async (params: GetAvailableAdoptionsParams,
   return response.json();
 };
 
-export const initiateAdoption = async (pokemon_entity_id: number, receiver_user_id: string, token: string | null, provider_user_id?: string) => {
+export const initiateAdoption = async (
+  pokemon_entity_id: number,
+  receiver_user_id: string,
+  token: string | null,
+  provider_user_id?: string,
+) => {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
   };

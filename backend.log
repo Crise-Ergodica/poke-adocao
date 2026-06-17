@@ -267,7 +267,7 @@ Traceback (most recent call last):
   File "/app/backend/app/main.py", line 17, in <module>
     from app.models import Base, User, PokemonEntity
   File "/app/backend/app/models.py", line 2
-    Author: Aurora Drumond Costa Magalhães
+    Author: Aurora Drumond Magalhães, Ana Clara de Souza e Kayke Wellington
                    ^^^^^^^
 SyntaxError: invalid syntax
 WARNING:  StatReload detected changes in 'app/main.py'. Reloading...
@@ -316,7 +316,7 @@ Traceback (most recent call last):
   File "<frozen importlib._bootstrap_external>", line 1063, in source_to_code
   File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
   File "/app/backend/app/main.py", line 2
-    Author: Aurora Drumond Costa Magalhães
+    Author: Aurora Drumond Magalhães, Ana Clara de Souza e Kayke Wellington
                    ^^^^^^^
 SyntaxError: invalid syntax
 WARNING:  StatReload detected changes in 'app/schemas.py'. Reloading...
@@ -365,7 +365,7 @@ Traceback (most recent call last):
   File "<frozen importlib._bootstrap_external>", line 1063, in source_to_code
   File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
   File "/app/backend/app/main.py", line 2
-    Author: Aurora Drumond Costa Magalhães
+    Author: Aurora Drumond Magalhães, Ana Clara de Souza e Kayke Wellington
                    ^^^^^^^
 SyntaxError: invalid syntax
 WARNING:  StatReload detected changes in 'app/main.py'. Reloading...

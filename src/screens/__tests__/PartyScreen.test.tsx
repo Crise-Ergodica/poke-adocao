@@ -1,4 +1,4 @@
-// Author: Aurora Drumond Costa Magalhães
+// Author: Aurora Drumond Magalhães, Ana Clara de Souza e Kayke Wellington
 import React from 'react';
 import { render, waitFor } from '@testing-library/react-native';
 import { PaperProvider } from 'react-native-paper';
@@ -21,23 +21,29 @@ jest.mock('@react-navigation/native', () => ({
 global.fetch = jest.fn(() =>
   Promise.resolve({
     ok: true,
-    json: () => Promise.resolve({
-      party: [
-        { id: 1, pokemon_id: 25 },
-        { id: 2, pokemon_id: 1 }
-      ]
-    }),
-  })
+    json: () =>
+      Promise.resolve({
+        party: [
+          { id: 1, pokemon_id: 25 },
+          { id: 2, pokemon_id: 1 },
+        ],
+      }),
+  }),
 ) as jest.Mock;
 
 describe('PartyScreen', () => {
   it('renders party screen correctly with populated slots and empty slots', async () => {
     const { getByText, getAllByText } = render(
-      <SafeAreaProvider initialMetrics={{ frame: { x: 0, y: 0, width: 0, height: 0 }, insets: { top: 0, left: 0, right: 0, bottom: 0 } }}>
+      <SafeAreaProvider
+        initialMetrics={{
+          frame: { x: 0, y: 0, width: 0, height: 0 },
+          insets: { top: 0, left: 0, right: 0, bottom: 0 },
+        }}
+      >
         <PaperProvider>
           <PartyScreen />
         </PaperProvider>
-      </SafeAreaProvider>
+      </SafeAreaProvider>,
     );
 
     // Initial loading state might not be testable due to how fast the mock resolves or layout issues,

@@ -1,5 +1,5 @@
 /**
- * Author: Aurora Drumond Costa Magalhães
+ * Author: Aurora Drumond Magalhães, Ana Clara de Souza e Kayke Wellington
  *
  * Service to handle Pokemon API calls.
  */
@@ -10,7 +10,7 @@ export const spawnPokemon = async (lat: number, lon: number, token: string) => {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
   };
-  
+
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
   }
@@ -28,11 +28,15 @@ export const spawnPokemon = async (lat: number, lon: number, token: string) => {
   return response.json();
 };
 
-export const getNearby = async (latitude: number, longitude: number, token: string | null = null) => {
+export const getNearby = async (
+  latitude: number,
+  longitude: number,
+  token: string | null = null,
+) => {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
   };
-  
+
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
   }

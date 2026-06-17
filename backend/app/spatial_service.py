@@ -1,5 +1,5 @@
 """
-Author: Aurora Drumond Costa Magalhães
+Author: Aurora Drumond Magalhães, Ana Clara de Souza e Kayke Wellington
 
 Spatial service module to calculate bounding boxes and distances using the Haversine formula.
 """

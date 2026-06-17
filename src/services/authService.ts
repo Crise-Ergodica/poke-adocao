@@ -1,5 +1,5 @@
 /**
- * Author: Aurora Drumond Costa Magalhães
+ * Author: Aurora Drumond Magalhães, Ana Clara de Souza e Kayke Wellington
  *
  * Service to handle authentication API calls.
  */
@@ -119,7 +119,11 @@ export const updatePassword = async (userId: string, newPassword: string, token:
   return response.json();
 };
 
-export const updateCompanion = async (userId: string, companionId: number, token: string | null) => {
+export const updateCompanion = async (
+  userId: string,
+  companionId: number,
+  token: string | null,
+) => {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
   };

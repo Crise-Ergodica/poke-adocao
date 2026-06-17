@@ -2,6 +2,7 @@
  * Context for managing application authentication and user state.
  */
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { Platform } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 
 interface AuthContextType {
@@ -28,6 +29,44 @@ export const AuthContext = createContext<AuthContextType>({
   logout: async () => {},
 });
 
+// Se isso não funcionar, é papo de suicidio
+const setStorageItemAsync = async (key: string, value: string) => {
+  if (Platform.OS === 'web') {
+    try {
+      localStorage.setItem(key, value);
+    } catch (e) {
+      console.error('Local storage is unavailable:', e);
+    }
+  } else {
+    await SecureStore.setItemAsync(key, value);
+  }
+};
+
+const getStorageItemAsync = async (key: string) => {
+  if (Platform.OS === 'web') {
+    try {
+      return localStorage.getItem(key);
+    } catch (e) {
+      console.error('Local storage is unavailable:', e);
+      return null;
+    }
+  } else {
+    return await SecureStore.getItemAsync(key);
+  }
+};
+
+const deleteStorageItemAsync = async (key: string) => {
+  if (Platform.OS === 'web') {
+    try {
+      localStorage.removeItem(key);
+    } catch (e) {
+      console.error('Local storage is unavailable:', e);
+    }
+  } else {
+    await SecureStore.deleteItemAsync(key);
+  }
+};
+
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [userId, setUserId] = useState<string | null>(null);
   const [iconUrl, setIconUrl] = useState<string | null>(null);
@@ -37,10 +76,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     const loadState = async () => {
       try {
-        const storedToken = await SecureStore.getItemAsync('token');
-        const storedUserId = await SecureStore.getItemAsync('userId');
-        const storedIconUrl = await SecureStore.getItemAsync('iconUrl');
-        const storedCompanionId = await SecureStore.getItemAsync('companionPokemonId');
+        const storedToken = await getStorageItemAsync('token');
+        const storedUserId = await getStorageItemAsync('userId');
+        const storedIconUrl = await getStorageItemAsync('iconUrl');
+        const storedCompanionId = await getStorageItemAsync('companionPokemonId');
         
         if (storedToken && storedUserId) {
           setToken(storedToken);
@@ -58,36 +97,36 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const handleSetToken = async (newToken: string | null) => {
     setToken(newToken);
     if (newToken) {
-      await SecureStore.setItemAsync('token', newToken);
+      await setStorageItemAsync('token', newToken);
     } else {
-      await SecureStore.deleteItemAsync('token');
+      await deleteStorageItemAsync('token');
     }
   };
 
   const handleSetUserId = async (newUserId: string | null) => {
     setUserId(newUserId);
     if (newUserId) {
-      await SecureStore.setItemAsync('userId', newUserId);
+      await setStorageItemAsync('userId', newUserId);
     } else {
-      await SecureStore.deleteItemAsync('userId');
+      await deleteStorageItemAsync('userId');
     }
   };
 
   const handleSetIconUrl = async (newIconUrl: string | null) => {
     setIconUrl(newIconUrl);
     if (newIconUrl) {
-      await SecureStore.setItemAsync('iconUrl', newIconUrl);
+      await setStorageItemAsync('iconUrl', newIconUrl);
     } else {
-      await SecureStore.deleteItemAsync('iconUrl');
+      await deleteStorageItemAsync('iconUrl');
     }
   };
 
   const handleSetCompanionPokemonId = async (newId: number | null) => {
     setCompanionPokemonId(newId);
     if (newId !== null) {
-      await SecureStore.setItemAsync('companionPokemonId', newId.toString());
+      await setStorageItemAsync('companionPokemonId', newId.toString());
     } else {
-      await SecureStore.deleteItemAsync('companionPokemonId');
+      await deleteStorageItemAsync('companionPokemonId');
     }
   };
 

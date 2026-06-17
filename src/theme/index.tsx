@@ -1,4 +1,4 @@
-// Author: Aurora Drumond Costa Magalhães
+// Author: Aurora Drumond Magalhães, Ana Clara de Souza e Kayke Wellington
 // src/theme/index.ts
 import { MD3LightTheme as DefaultTheme } from 'react-native-paper';
 
@@ -8,14 +8,14 @@ export const theme = {
   colors: {
     ...DefaultTheme.colors,
     // Cores extraídas do seu design no Figma
-    primary: '#6750A4',       // Roxo principal (botão de entrada)
+    primary: '#6750A4', // Roxo principal (botão de entrada)
     onPrimary: '#FFFFFF',
     primaryContainer: '#EADDFF', // Fundo de botões desativados ou chips
     onPrimaryContainer: '#21005D',
     secondary: '#625B71',
     onSecondary: '#FFFFFF',
-    background: '#FDFBFF',    // Fundo da aplicação
-    surface: '#FDFBFF',       // Fundo dos cards
+    background: '#FDFBFF', // Fundo da aplicação
+    surface: '#FDFBFF', // Fundo dos cards
     surfaceVariant: '#E7E0EC', // Fundos de inputs
     error: '#B3261E',
   },

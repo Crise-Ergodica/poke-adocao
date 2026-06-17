@@ -17,8 +17,8 @@ def fix_file(filename, header):
     with open(filename, 'w') as f:
         f.writelines(lines)
 
-py_header = '"""\nAuthor: Aurora Drumond Costa Magalhães\n"""\n'
-tsx_header = '/**\n * Author: Aurora Drumond Costa Magalhães\n */\n'
+py_header = '"""\nAuthor: Aurora Drumond Magalhães, Ana Clara de Souza e Kayke Wellington\n"""\n'
+tsx_header = '/**\n * Author: Aurora Drumond Magalhães, Ana Clara de Souza e Kayke Wellington\n */\n'
 
 fix_file('backend/app/main.py', py_header)
 fix_file('backend/app/schemas.py', py_header)

@@ -1,7 +1,15 @@
-// Author: Aurora Drumond Costa Magalhães
+// Author: Aurora Drumond Magalhães, Ana Clara de Souza e Kayke Wellington
 import React, { useState } from 'react';
 import { View, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
-import { Text, TextInput, Button, useTheme, Snackbar, SegmentedButtons, HelperText } from 'react-native-paper';
+import {
+  Text,
+  TextInput,
+  Button,
+  useTheme,
+  Snackbar,
+  SegmentedButtons,
+  HelperText,
+} from 'react-native-paper';
 import { login, register } from '../services/authService';
 import { useAuth } from '../store/AuthContext';
 import { jwtDecode } from 'jwt-decode';
@@ -9,12 +17,12 @@ import { jwtDecode } from 'jwt-decode';
 export default function LoginScreen() {
   const theme = useTheme();
   const { setUserId, setToken, setIconUrl, setCompanionPokemonId } = useAuth();
-  
+
   const [mode, setMode] = useState('login'); // 'login' or 'register'
   const [email, setEmail] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  
+
   const [isLoading, setIsLoading] = useState(false);
 
   const isEmailValid = (email: string) => {
@@ -47,13 +55,13 @@ export default function LoginScreen() {
 
   const handleAuth = async () => {
     if (!email.trim() || !password.trim()) {
-      setSnackbarMessage("Please fill in email and password.");
+      setSnackbarMessage('Please fill in email and password.');
       setSnackbarVisible(true);
       return;
     }
 
     if (mode === 'register' && !username.trim()) {
-      setSnackbarMessage("Please enter a username for registration.");
+      setSnackbarMessage('Please enter a username for registration.');
       setSnackbarVisible(true);
       return;
     }
@@ -64,16 +72,16 @@ export default function LoginScreen() {
         await register(email.trim(), username.trim(), password);
         // Automatically login after successful registration
       }
-      
+
       const tokenData = await login(email.trim(), password);
-      
+      console.log('PAYLOAD DO BACKEND:', tokenData);
+
       setToken(tokenData.access_token);
       setUserId(tokenData.user_id);
       setIconUrl(tokenData.icon_url || null);
       setCompanionPokemonId(tokenData.companion_pokemon_id || null);
-
     } catch (error: any) {
-      setSnackbarMessage(error.message || "Authentication failed.");
+      setSnackbarMessage(error.message || 'Authentication failed.');
       setSnackbarVisible(true);
     } finally {
       setIsLoading(false);
@@ -89,7 +97,10 @@ export default function LoginScreen() {
         <Text variant="displaySmall" style={[styles.title, { color: theme.colors.primary }]}>
           Poke-Adoção
         </Text>
-        <Text variant="bodyLarge" style={[styles.subtitle, { color: theme.colors.onSurfaceVariant }]}>
+        <Text
+          variant="bodyLarge"
+          style={[styles.subtitle, { color: theme.colors.onSurfaceVariant }]}
+        >
           {mode === 'login' ? 'Sign in to continue.' : 'Create a new account.'}
         </Text>
 
@@ -196,5 +207,5 @@ const styles = StyleSheet.create({
   },
   segmentedButton: {
     marginBottom: 16,
-  }
+  },
 });

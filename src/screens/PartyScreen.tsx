@@ -1,7 +1,17 @@
-// Author: Aurora Drumond Costa Magalhães
+// Author: Aurora Drumond Magalhães, Ana Clara de Souza e Kayke Wellington
 import React, { useCallback, useState } from 'react';
 import { View, StyleSheet, FlatList, Image, useWindowDimensions } from 'react-native';
-import { Text, Surface, useTheme, ActivityIndicator, Button, Portal, Modal, TouchableRipple, Snackbar } from 'react-native-paper';
+import {
+  Text,
+  Surface,
+  useTheme,
+  ActivityIndicator,
+  Button,
+  Portal,
+  Modal,
+  TouchableRipple,
+  Snackbar,
+} from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { useAuth } from '../store/AuthContext';
@@ -38,24 +48,27 @@ export default function PartyScreen() {
   const handleListForAdoption = async () => {
     if (!selectedPokemon || !token) return;
     try {
-      const response = await fetch(`${API_URL}/users/pokemon/${selectedPokemon.id}/list_for_adoption`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
+      const response = await fetch(
+        `${API_URL}/users/pokemon/${selectedPokemon.id}/list_for_adoption`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        },
+      );
       if (response.ok) {
-        setSnackbarMessage("Pokemon listed for adoption!");
+        setSnackbarMessage('Pokemon listed for adoption!');
         setSnackbarVisible(true);
         hideModal();
         await fetchParty();
       } else {
         const err = await response.json();
-        console.error("Failed to list for adoption:", err);
+        console.error('Failed to list for adoption:', err);
       }
     } catch (error) {
-      console.error("Error listing pokemon for adoption:", error);
+      console.error('Error listing pokemon for adoption:', error);
     }
   };
 
@@ -77,7 +90,7 @@ export default function PartyScreen() {
   useFocusEffect(
     useCallback(() => {
       fetchParty();
-    }, [userId])
+    }, [userId]),
   );
 
   const handleReturn = async (pokemonEntityId: number) => {
@@ -97,12 +110,27 @@ export default function PartyScreen() {
 
   const renderItem = ({ item, index }: { item: UserPokemon | null; index: number }) => {
     return (
-      <Surface style={[styles.slot, { backgroundColor: theme.colors.surfaceVariant, flex: 1 / numCols, margin: 8 }]} elevation={2}>
+      <Surface
+        style={[
+          styles.slot,
+          { backgroundColor: theme.colors.surfaceVariant, flex: 1 / numCols, margin: 8 },
+        ]}
+        elevation={2}
+      >
         {item ? (
           <TouchableRipple onPress={() => showModal(item)} style={styles.pokemonContainer}>
-            <View style={{ alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%' }}>
+            <View
+              style={{
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '100%',
+                height: '100%',
+              }}
+            >
               <Image
-                source={{ uri: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${item.pokemon_id}.png` }}
+                source={{
+                  uri: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${item.pokemon_id}.png`,
+                }}
                 style={styles.sprite}
               />
               <Text variant="bodyMedium" style={styles.pokemonIdLabel}>
@@ -112,8 +140,17 @@ export default function PartyScreen() {
           </TouchableRipple>
         ) : (
           <View style={styles.emptySlot}>
-            <MaterialCommunityIcons name="help-circle-outline" size={40} color={theme.colors.onSurfaceVariant} />
-            <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 4 }}>Empty Slot</Text>
+            <MaterialCommunityIcons
+              name="help-circle-outline"
+              size={40}
+              color={theme.colors.onSurfaceVariant}
+            />
+            <Text
+              variant="labelSmall"
+              style={{ color: theme.colors.onSurfaceVariant, marginTop: 4 }}
+            >
+              Empty Slot
+            </Text>
           </View>
         )}
       </Surface>
@@ -130,7 +167,9 @@ export default function PartyScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <Text variant="headlineMedium" style={[styles.title, { color: theme.colors.primary }]}>Your Party</Text>
+      <Text variant="headlineMedium" style={[styles.title, { color: theme.colors.primary }]}>
+        Your Party
+      </Text>
       <FlatList
         key={numCols}
         data={slots}
@@ -142,11 +181,20 @@ export default function PartyScreen() {
       />
 
       <Portal>
-        <Modal visible={modalVisible} onDismiss={hideModal} contentContainerStyle={[styles.modalContainer, { backgroundColor: theme.colors.background }]}>
+        <Modal
+          visible={modalVisible}
+          onDismiss={hideModal}
+          contentContainerStyle={[
+            styles.modalContainer,
+            { backgroundColor: theme.colors.background },
+          ]}
+        >
           {selectedPokemon && (
             <View style={styles.modalContent}>
               <Image
-                source={{ uri: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${selectedPokemon.pokemon_id}.png` }}
+                source={{
+                  uri: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${selectedPokemon.pokemon_id}.png`,
+                }}
                 style={styles.modalSprite}
               />
               <Text variant="titleLarge" style={styles.modalTitle}>
@@ -155,10 +203,18 @@ export default function PartyScreen() {
               <Text variant="bodyMedium">ID: {selectedPokemon.pokemon_id}</Text>
 
               <View style={styles.modalActions}>
-                <Button mode="contained" onPress={() => console.log('Ver Status')} style={styles.modalButton}>
+                <Button
+                  mode="contained"
+                  onPress={() => console.log('Ver Status')}
+                  style={styles.modalButton}
+                >
                   Ver Status
                 </Button>
-                <Button mode="contained" onPress={() => console.log('Renomear')} style={styles.modalButton}>
+                <Button
+                  mode="contained"
+                  onPress={() => console.log('Renomear')}
+                  style={styles.modalButton}
+                >
                   Renomear
                 </Button>
                 <Button mode="contained" onPress={handleListForAdoption} style={styles.modalButton}>

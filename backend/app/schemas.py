@@ -1,5 +1,5 @@
 """
-Author: Aurora Drumond Costa Magalhães
+Author: Aurora Drumond Magalhães, Ana Clara de Souza e Kayke Wellington
 """
 """
 Pydantic schemas for the application API.
@@ -210,8 +210,8 @@ class AdoptionSchema(BaseModel):
     """
     id: int
     pokemon_entity_id: int
-    provider_user_id: Optional[str]
-    receiver_user_id: str
+    provider_user_id: Optional[str] = None
+    receiver_user_id: Optional[str] = None
     status: AdoptionStatus
     created_at: datetime
     updated_at: datetime
