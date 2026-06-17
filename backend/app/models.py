@@ -44,6 +44,7 @@ class User(Base):
     longitude = Column(Float)
     icon_url = Column(String, nullable=True)
     last_updated = Column(DateTime)
+    companion_pokemon_id = Column(Integer, nullable=True)
 
     party = relationship("UserPokemon", back_populates="user")
 

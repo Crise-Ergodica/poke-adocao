@@ -12,14 +12,29 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
 from app.models import User, UserPokemon, PokemonEntity, Adoption, AdoptionStatus
-from app.schemas import LocationUpdate, NearbyResponse, UserSchema, PokemonEntitySchema, AdoptionCreate, AdoptionSchema, AdoptionUpdateStatus, UserCreate, UserLogin, Token, PokemonRenameRequest
+from app.schemas import (
+    LocationUpdate,
+    NearbyResponse,
+    UserSchema,
+    PokemonEntitySchema,
+    AdoptionCreate,
+    AdoptionSchema,
+    AdoptionUpdateStatus,
+    UserCreate,
+    UserLogin,
+    Token,
+    PokemonRenameRequest,
+    UsernameUpdate,
+    PasswordUpdate,
+    CompanionUpdate,
+)
 from app.database import engine, get_db, SessionLocal, Base
 from app.spatial_service import calculate_bounding_box, haversine_distance
 from app.pokeapi_service import spawn_wild_pokemon
 from app.adoption_service import create_adoption, transition_state, return_pokemon, get_available_adoptions
 from app.models import AdoptionStatus
 from pydantic import BaseModel
-from app.auth_service import register_user, authenticate_user, create_access_token, SECRET_KEY, ALGORITHM
+from app.auth_service import register_user, authenticate_user, create_access_token, SECRET_KEY, ALGORITHM, get_password_hash
 from fastapi.security import OAuth2PasswordBearer
 import jwt
 
@@ -659,21 +674,115 @@ async def get_available_adoptions_endpoint(
 
     return query.all()
 
-@app.post("/api/v1/map/spawn")
-async def spawn_pokemon(latitude: float, longitude: float, db: Session = Depends(get_db)):
-    new_lat, new_lon = generate_random_coordinates(latitude, longitude)
+# --- # LEGACY CODE, REPLACED BY "async def spawn_pokemon_endpoint" ---
+# @app.post("/api/v1/map/spawn")
+# async def spawn_pokemon(latitude: float, longitude: float, db: Session = Depends(get_db)):
+#     new_lat, new_lon = generate_random_coordinates(latitude, longitude)
     
-    pokemon_data = await fetch_random_pokemon()
+#     pokemon_data = await fetch_random_pokemon()
     
-    new_pokemon = PokemonEntity(
-        pokemon_id=pokemon_data['id'],
-        latitude=new_lat,
-        longitude=new_lon,
-        sprite_url=pokemon_data['sprites']['front_default'],
-        is_shiny=random.random() < 0.1, # 10% de chance de ser shiny
-        type_1=pokemon_data['types'][0]['type']['name']
-    )
+#     new_pokemon = PokemonEntity(
+#         pokemon_id=pokemon_data['id'],
+#         latitude=new_lat,
+#         longitude=new_lon,
+#         sprite_url=pokemon_data['sprites']['front_default'],
+#         is_shiny=random.random() < 0.1, # 10% de chance de ser shiny
+#         type_1=pokemon_data['types'][0]['type']['name']
+#     )
     
-    db.add(new_pokemon)
+#     db.add(new_pokemon)
+#     db.commit()
+#     return {"message": "Spawned", "pokemon": new_pokemon.pokemon_id}
+
+@app.patch("/api/v1/users/{user_id}/username", response_model=UserSchema)
+def update_user_username(
+    user_id: str,
+    request: UsernameUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Update the user's username.
+
+    Args:
+        user_id (str): The ID of the user.
+        request (UsernameUpdate): The new username data.
+        db (Session): The database session.
+        current_user (User): The authenticated user.
+
+    Raises:
+        HTTPException: If the user is unauthorized or the username is already taken.
+
+    Returns:
+        UserSchema: The updated user entity.
+    """
+    if current_user.user_id != user_id:
+        raise HTTPException(status_code=403, detail="Not authorized to update this user")
+
+    existing_user = db.query(User).filter(User.user_id == request.username).first()
+    if existing_user and existing_user.id != current_user.id:
+        raise HTTPException(status_code=400, detail="Username already taken")
+
+    current_user.user_id = request.username
     db.commit()
-    return {"message": "Spawned", "pokemon": new_pokemon.pokemon_id}
+    db.refresh(current_user)
+    return current_user
+
+@app.patch("/api/v1/users/{user_id}/password")
+def update_user_password(
+    user_id: str,
+    request: PasswordUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Update the user's password.
+
+    Args:
+        user_id (str): The ID of the user.
+        request (PasswordUpdate): The new password data.
+        db (Session): The database session.
+        current_user (User): The authenticated user.
+
+    Raises:
+        HTTPException: If the user is unauthorized.
+
+    Returns:
+        dict: A success message.
+    """
+    if current_user.user_id != user_id:
+        raise HTTPException(status_code=403, detail="Not authorized to update this user")
+
+    current_user.hashed_password = get_password_hash(request.password)
+    db.commit()
+    return {"message": "Password updated successfully"}
+
+@app.patch("/api/v1/users/{user_id}/companion", response_model=UserSchema)
+def update_user_companion(
+    user_id: str,
+    request: CompanionUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Update the user's companion pokemon.
+
+    Args:
+        user_id (str): The ID of the user.
+        request (CompanionUpdate): The new companion pokemon data.
+        db (Session): The database session.
+        current_user (User): The authenticated user.
+
+    Raises:
+        HTTPException: If the user is unauthorized.
+
+    Returns:
+        UserSchema: The updated user entity.
+    """
+    if current_user.user_id != user_id:
+        raise HTTPException(status_code=403, detail="Not authorized to update this user")
+
+    current_user.companion_pokemon_id = request.companion_pokemon_id
+    db.commit()
+    db.refresh(current_user)
+    return current_user
