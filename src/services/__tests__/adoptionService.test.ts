@@ -13,19 +13,19 @@ describe('adoptionService', () => {
   });
 
   it('initiateAdoption builds correct payload', async () => {
-    await initiateAdoption(10, 'user_1', null);
+    await initiateAdoption(10, 'user_1', 'fake_token');
     expect(global.fetch).toHaveBeenCalledWith('http://localhost:8000/api/v1/adoptions/initiate', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Authorization': 'Bearer fake_token', 'Content-Type': 'application/json' },
       body: JSON.stringify({ pokemon_entity_id: 10, receiver_user_id: 'user_1' }),
     });
   });
 
   it('finalizeAdoption builds correct payload', async () => {
-    await finalizeAdoption(1, null);
+    await finalizeAdoption(1, 'fake_token');
     expect(global.fetch).toHaveBeenCalledWith('http://localhost:8000/api/v1/adoptions/1/finalize', {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Authorization': 'Bearer fake_token', 'Content-Type': 'application/json' },
     });
   });
 });
