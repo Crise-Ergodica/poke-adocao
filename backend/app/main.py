@@ -11,7 +11,7 @@ import asyncio
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
-from datetime import datetime
+from datetime import datetime, timedelta
 from app.models import Base, User, PokemonEntity
 from app.schemas import LocationUpdate, NearbyResponse, UserSchema, PokemonEntitySchema, AdoptionCreate, AdoptionSchema, AdoptionUpdateStatus, UserCreate, UserLogin, Token, PokemonRenameRequest
 from app.database import engine, get_db, SessionLocal
@@ -32,38 +32,71 @@ app = FastAPI()
 
 async def pokemon_spawner_task():
     """
-    Background task to spawn wild Pokemon every 5 minutes
-    within a 2km radius of Timoteo, MG (-19.5312, -42.6105).
+    Background task to spawn wild Pokemon every 3 minutes.
+    Generates Pokemon around active users (last updated within 30 minutes).
+    If no active users are found, defaults to Timoteo, MG (-19.5312, -42.6105).
+    Spawns occur within a 150-meter radius (approx. 0.00135 degrees).
     """
     import random
     import math
-    base_lat = -19.5312
-    base_lon = -42.6105
-    radius_km = 2.0
+
+    default_lat = -19.5312
+    default_lon = -42.6105
+    radius_degrees = 0.00135  # ~150 meters
 
     while True:
         await asyncio.sleep(180) # 3 minutes
 
-        # Generate random coordinates within radius
-        # 1 degree lat is ~111km. So 2km is ~0.018 degrees.
-        # Use simple approximation
-        r = radius_km / 111.320
-        u = random.random()
-        v = random.random()
-        w = r * math.sqrt(u)
-        t = 2 * math.pi * v
-        x = w * math.cos(t)
-        y = w * math.sin(t)
-
-        # Adjust longitude for latitude
-        x = x / math.cos(math.radians(base_lat))
-
-        new_lat = base_lat + y
-        new_lon = base_lon + x
-
         db = SessionLocal()
         try:
-            await spawn_wild_pokemon(db, new_lat, new_lon)
+            # Find active users (updated within last 30 minutes)
+            time_threshold = datetime.now() - timedelta(minutes=30)
+            active_users = db.query(User).filter(
+                User.last_updated != None,
+                User.last_updated >= time_threshold
+            ).all()
+
+            if active_users:
+                # Spawn around each active user
+                for user in active_users:
+                    # Random coordinate within 150m radius
+                    u = random.random()
+                    v = random.random()
+                    w = radius_degrees * math.sqrt(u)
+                    t = 2 * math.pi * v
+                    x = w * math.cos(t)
+                    y = w * math.sin(t)
+
+                    # Adjust longitude for latitude
+                    x = x / math.cos(math.radians(user.latitude))
+
+                    new_lat = user.latitude + y
+                    new_lon = user.longitude + x
+
+                    try:
+                        await spawn_wild_pokemon(db, new_lat, new_lon)
+                    except Exception as e:
+                        pass
+            else:
+                # No active users, fallback to default coordinates
+                u = random.random()
+                v = random.random()
+                w = radius_degrees * math.sqrt(u)
+                t = 2 * math.pi * v
+                x = w * math.cos(t)
+                y = w * math.sin(t)
+
+                # Adjust longitude for latitude
+                x = x / math.cos(math.radians(default_lat))
+
+                new_lat = default_lat + y
+                new_lon = default_lon + x
+
+                try:
+                    await spawn_wild_pokemon(db, new_lat, new_lon)
+                except Exception as e:
+                    pass
+
         except Exception as e:
             # Silently handle or log errors so the loop doesn't crash
             pass
