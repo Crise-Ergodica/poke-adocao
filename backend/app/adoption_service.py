@@ -10,14 +10,14 @@ from sqlalchemy.exc import IntegrityError
 from app.models import Adoption, AdoptionStatus, PokemonEntity, User, UserPokemon
 from app.spatial_service import haversine_distance
 
-def create_adoption(db: Session, pokemon_entity_id: int, receiver_user_id: str, provider_user_id: str = None) -> Adoption:
+def create_adoption(db: Session, pokemon_entity_id: int, receiver_user_id: str = None, provider_user_id: str = None) -> Adoption:
     """
     Initiates an adoption process by creating a new record with status NEW.
 
     Args:
         db (Session): Database session.
         pokemon_entity_id (int): The ID of the Pokemon to adopt.
-        receiver_user_id (str): The ID of the user receiving.
+        receiver_user_id (str, optional): The ID of the user receiving. Defaults to None.
         provider_user_id (str, optional): The ID of the provider. Defaults to None.
 
     Returns:

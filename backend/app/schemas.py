@@ -175,11 +175,11 @@ class AdoptionCreate(BaseModel):
     Attributes:
         pokemon_entity_id (int): ID of the PokemonEntity to adopt.
         provider_user_id (Optional[str]): ID of the user providing the Pokemon.
-        receiver_user_id (str): ID of the user receiving the Pokemon.
+        receiver_user_id (Optional[str]): ID of the user receiving the Pokemon.
     """
     pokemon_entity_id: int
     provider_user_id: Optional[str] = None
-    receiver_user_id: str
+    receiver_user_id: Optional[str] = None
 
 
 class AdoptionUpdateStatus(BaseModel):

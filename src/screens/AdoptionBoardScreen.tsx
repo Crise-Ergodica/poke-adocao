@@ -64,6 +64,30 @@ const fetchAdoptions = async () => {
     setSnackbarVisible(true);
   };
 
+  const handleAcceptAdoption = async (adoptionId: number) => {
+    if (!token) return;
+    try {
+      const API_URL = 'http://localhost:8000/api/v1';
+      const response = await fetch(`${API_URL}/adoptions/${adoptionId}/accept`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        const err = await response.json().catch(() => null);
+        throw new Error(err?.detail || 'Failed to accept adoption');
+      }
+
+      showSnackbar("Adoption successful! Check your party.");
+      fetchAdoptions();
+    } catch (error: any) {
+      showSnackbar(error.message);
+    }
+  };
+
   const handleSearch = () => {
     fetchAdoptions();
   };
@@ -112,8 +136,8 @@ const fetchAdoptions = async () => {
                         description={`Provider: ${adoption.provider_user_id || 'Unknown'}`}
                         left={props => <Avatar.Icon size={40} icon="pokeball" />}
                         right={props => (
-                          <Button mode="contained" onPress={() => showSnackbar("Adoption detail to be implemented")}>
-                            View
+                          <Button mode="contained" onPress={() => handleAcceptAdoption(adoption.id)}>
+                            Adopt
                           </Button>
                         )}
                       />

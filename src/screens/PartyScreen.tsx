@@ -1,7 +1,7 @@
 // Author: Aurora Drumond Costa Magalhães
 import React, { useCallback, useState } from 'react';
 import { View, StyleSheet, FlatList, Image, useWindowDimensions } from 'react-native';
-import { Text, Surface, useTheme, ActivityIndicator, Button, Portal, Modal, TouchableRipple } from 'react-native-paper';
+import { Text, Surface, useTheme, ActivityIndicator, Button, Portal, Modal, TouchableRipple, Snackbar } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { useAuth } from '../store/AuthContext';
@@ -26,12 +26,38 @@ export default function PartyScreen() {
   const [returningId, setReturningId] = useState<number | null>(null);
   const [selectedPokemon, setSelectedPokemon] = useState<UserPokemon | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
+  const [snackbarVisible, setSnackbarVisible] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
 
   const showModal = (pokemon: UserPokemon) => {
     setSelectedPokemon(pokemon);
     setModalVisible(true);
   };
   const hideModal = () => setModalVisible(false);
+
+  const handleListForAdoption = async () => {
+    if (!selectedPokemon || !token) return;
+    try {
+      const response = await fetch(`${API_URL}/users/pokemon/${selectedPokemon.id}/list_for_adoption`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      if (response.ok) {
+        setSnackbarMessage("Pokemon listed for adoption!");
+        setSnackbarVisible(true);
+        hideModal();
+        await fetchParty();
+      } else {
+        const err = await response.json();
+        console.error("Failed to list for adoption:", err);
+      }
+    } catch (error) {
+      console.error("Error listing pokemon for adoption:", error);
+    }
+  };
 
   const fetchParty = async () => {
     if (!userId) return;
@@ -135,7 +161,7 @@ export default function PartyScreen() {
                 <Button mode="contained" onPress={() => console.log('Renomear')} style={styles.modalButton}>
                   Renomear
                 </Button>
-                <Button mode="contained" onPress={() => console.log('Colocar para Adoção')} style={styles.modalButton}>
+                <Button mode="contained" onPress={handleListForAdoption} style={styles.modalButton}>
                   Colocar para Adoção
                 </Button>
                 <Button
@@ -156,6 +182,14 @@ export default function PartyScreen() {
           )}
         </Modal>
       </Portal>
+
+      <Snackbar
+        visible={snackbarVisible}
+        onDismiss={() => setSnackbarVisible(false)}
+        duration={3000}
+      >
+        {snackbarMessage}
+      </Snackbar>
     </SafeAreaView>
   );
 }
