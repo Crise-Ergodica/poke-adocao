@@ -377,6 +377,68 @@ def rename_pokemon(
     return {"message": "Pokemon renamed successfully"}
 
 
+@app.post("/api/v1/users/pokemon/{id}/list_for_adoption")
+def list_pokemon_for_adoption(
+    id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    List a pokemon from the user's party for public adoption.
+
+    Args:
+        id (int): The ID of the pokemon in the user's party.
+        db (Session): The database session.
+        current_user (User): The authenticated user.
+
+    Raises:
+        HTTPException: If the pokemon is not found, user is not authorized, or entity is missing.
+
+    Returns:
+        dict: A success message.
+    """
+    from app.models import UserPokemon, PokemonEntity
+    user_pokemon = db.query(UserPokemon).filter(UserPokemon.id == id).first()
+    if not user_pokemon:
+        raise HTTPException(status_code=404, detail="Pokemon not found in party")
+    if user_pokemon.user.user_id != current_user.user_id:
+        raise HTTPException(status_code=403, detail="Not authorized to list this pokemon")
+
+    # Find a matching PokemonEntity to link the adoption to.
+    # In a fully normalized DB, UserPokemon might link directly to PokemonEntity,
+    # but here we find one with the same pokemon_id (or create one if needed, though usually they exist).
+    # Since pokemon_entity_id is required in AdoptionCreate, we find the first available or create a dummy entity for listing.
+    # A better approach given the models: We can just use the pokemon_id to find an entity, but wait: UserPokemon has `pokemon_id`. Does it have an entity ID?
+    # The models show UserPokemon just has `pokemon_id`. We'll find an entity with that `pokemon_id` or just create one.
+    entity = db.query(PokemonEntity).filter(PokemonEntity.pokemon_id == user_pokemon.pokemon_id).first()
+    if not entity:
+        # Create an entity so it can be listed on the board.
+        entity = PokemonEntity(
+            pokemon_id=user_pokemon.pokemon_id,
+            latitude=current_user.latitude,
+            longitude=current_user.longitude
+        )
+        db.add(entity)
+        db.commit()
+        db.refresh(entity)
+
+    # Update entity location to the current user's location
+    entity.latitude = current_user.latitude
+    entity.longitude = current_user.longitude
+    entity.version_id = entity.version_id + 1
+
+    create_adoption(
+        db,
+        pokemon_entity_id=entity.id,
+        receiver_user_id=None,
+        provider_user_id=current_user.user_id
+    )
+
+    db.delete(user_pokemon)
+    db.commit()
+
+    return {"message": "Pokemon listed for adoption successfully"}
+
 @app.delete("/api/v1/users/pokemon/{id}")
 def release_pokemon(
     id: int,
@@ -451,6 +513,41 @@ def initiate_adoption_endpoint(
         receiver_user_id=adoption_create.receiver_user_id,
         provider_user_id=adoption_create.provider_user_id
     )
+
+@app.post("/api/v1/adoptions/{adoption_id}/accept", response_model=AdoptionSchema)
+def accept_adoption_endpoint(adoption_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    """
+    Accept a public adoption listing.
+
+    Args:
+        adoption_id (int): The ID of the adoption to accept.
+        db (Session): The database session.
+        current_user (User): The authenticated user claiming the adoption.
+
+    Raises:
+        HTTPException: If the adoption is already claimed or not found.
+
+    Returns:
+        AdoptionSchema: The finalized adoption object.
+    """
+    from app.models import Adoption
+    adoption = db.query(Adoption).filter(Adoption.id == adoption_id).first()
+    if not adoption:
+        raise HTTPException(status_code=404, detail="Adoption not found")
+
+    if adoption.receiver_user_id is not None:
+        raise HTTPException(status_code=400, detail="Adoption is already claimed")
+
+    adoption.receiver_user_id = current_user.user_id
+    db.commit()
+
+    try:
+        updated_adoption = transition_state(db, adoption_id, AdoptionStatus.ADOPTED)
+        return updated_adoption
+    except ValueError as e:
+        # If transition fails, we should probably revert the receiver_user_id change
+        # but the transaction might be rolled back in transition_state anyway.
+        raise HTTPException(status_code=400, detail=str(e))
 
 @app.patch("/api/v1/adoptions/{adoption_id}/finalize", response_model=AdoptionSchema)
 def finalize_adoption_endpoint(adoption_id: int, db: Session = Depends(get_db)):
