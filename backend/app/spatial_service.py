@@ -4,8 +4,20 @@ Author: Aurora Drumond Costa Magalhães
 Spatial service module to calculate bounding boxes and distances using the Haversine formula.
 """
 
+import random
 import math
 from typing import Tuple
+
+def generate_random_coordinates(lat, lon, radius_meters=100):
+    """Gera coordenadas aleatorias dentro de um raio."""
+    radius_in_degrees = radius_meters / 111320
+    u = random.random()
+    v = random.random()
+    w = radius_in_degrees * math.sqrt(u)
+    t = 2 * math.pi * v
+    x = w * math.cos(t)
+    y = w * math.sin(t)
+    return lat + x, lon + y
 
 def calculate_bounding_box(lat: float, lon: float, distance_m: float = 50.0) -> Tuple[float, float, float, float]:
     """

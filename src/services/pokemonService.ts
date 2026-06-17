@@ -4,23 +4,20 @@
  * Service to handle Pokemon API calls.
  */
 
-const API_URL = 'http://localhost:8000/api/v1/map'; // Adjust as needed
+const API_URL = 'http://localhost:8000/api/v1/map';
 
-export const spawnPokemon = async (latitude: number, longitude: number, token: string | null = null) => {
+export const spawnPokemon = async (lat: number, lon: number, token: string) => {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
   };
+  
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  const response = await fetch(`${API_URL}/spawn`, {
+  const response = await fetch(`${API_URL}/spawn?latitude=${lat}&longitude=${lon}`, {
     method: 'POST',
     headers,
-    body: JSON.stringify({
-      latitude,
-      longitude,
-    }),
   });
 
   if (!response.ok) {
@@ -35,6 +32,7 @@ export const getNearby = async (latitude: number, longitude: number, token: stri
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
   };
+  
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
   }

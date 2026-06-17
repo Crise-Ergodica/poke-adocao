@@ -1,23 +1,19 @@
 """
 Author: Aurora Drumond Costa Magalhães
+
+Main FastAPI application defining spatial endpoints.
 """
 import httpx
 from typing import List, Optional
-
-
-"""
-Main FastAPI application defining spatial endpoints.
-"""
-
 
 import asyncio
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
-from app.models import Base, User, PokemonEntity
+from app.models import User, UserPokemon, PokemonEntity, Adoption, AdoptionStatus
 from app.schemas import LocationUpdate, NearbyResponse, UserSchema, PokemonEntitySchema, AdoptionCreate, AdoptionSchema, AdoptionUpdateStatus, UserCreate, UserLogin, Token, PokemonRenameRequest
-from app.database import engine, get_db, SessionLocal
+from app.database import engine, get_db, SessionLocal, Base
 from app.spatial_service import calculate_bounding_box, haversine_distance
 from app.pokeapi_service import spawn_wild_pokemon
 from app.adoption_service import create_adoption, transition_state, return_pokemon, get_available_adoptions
@@ -658,3 +654,22 @@ async def get_available_adoptions_endpoint(
         query = query.filter(PokemonEntity.gender == gender)
 
     return query.all()
+
+@app.post("/api/v1/map/spawn")
+async def spawn_pokemon(latitude: float, longitude: float, db: Session = Depends(get_db)):
+    new_lat, new_lon = generate_random_coordinates(latitude, longitude)
+    
+    pokemon_data = await fetch_random_pokemon()
+    
+    new_pokemon = PokemonEntity(
+        pokemon_id=pokemon_data['id'],
+        latitude=new_lat,
+        longitude=new_lon,
+        sprite_url=pokemon_data['sprites']['front_default'],
+        is_shiny=random.random() < 0.1, # 10% de chance de ser shiny
+        type_1=pokemon_data['types'][0]['type']['name']
+    )
+    
+    db.add(new_pokemon)
+    db.commit()
+    return {"message": "Spawned", "pokemon": new_pokemon.pokemon_id}

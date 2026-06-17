@@ -1,12 +1,12 @@
 // Author: Aurora Drumond Costa Magalhães
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, StyleSheet, ScrollView, useWindowDimensions } from 'react-native';
 import { Card, Text, Button, Snackbar, List, useTheme, ActivityIndicator, Avatar } from 'react-native-paper';
 import { useUserLocation } from '../hooks/useUserLocation';
-import { getNearby } from '../services/pokemonService';
 import { initiateAdoption, finalizeAdoption } from '../services/adoptionService';
 import { useAuth } from '../store/AuthContext';
 import { useNavigation } from '@react-navigation/native';
+import { getNearby, spawnPokemon } from '../services/pokemonService';
 
 function getDistanceInMeters(lat1: number, lon1: number, lat2: number, lon2: number): number {
   const R = 6371e3; // Earth radius in meters
@@ -32,21 +32,35 @@ export default function RadarScreen() {
   const [snackbarVisible, setSnackbarVisible] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [loadingRadar, setLoadingRadar] = useState(false);
+  const fetchNearby = useCallback(async () => {
 
-  const fetchNearby = async () => {
-    if (location && isAccuracySufficient) {
+      if (!location || !isAccuracySufficient || !token) return;
+
       setLoadingRadar(true);
       try {
+
         const data = await getNearby(location.latitude, location.longitude, token);
-        setNearbyPokemon(data.pokemon || []);
+        
+
+        const pokemonList = data.pokemon || [];
+        
+        if (pokemonList.length === 0) {
+
+          await spawnPokemon(location.latitude, location.longitude, token);
+
+          const refreshedData = await getNearby(location.latitude, location.longitude, token);
+          setNearbyPokemon(refreshedData.pokemon || []);
+        } else {
+          setNearbyPokemon(pokemonList);
+        }
+        
         setNearbyUsers(data.users || []);
       } catch (error: any) {
-        showSnackbar(error.message);
+        showSnackbar(error.message || "Erro ao atualizar radar.");
       } finally {
         setLoadingRadar(false);
       }
-    }
-  };
+    }, [location, isAccuracySufficient, token]);
 
   useEffect(() => {
     fetchNearby();
