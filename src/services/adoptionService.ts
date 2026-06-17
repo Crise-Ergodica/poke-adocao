@@ -50,15 +50,13 @@ export const getAvailableAdoptions = async (
 export const initiateAdoption = async (
   pokemon_entity_id: number,
   receiver_user_id: string,
-  token: string | null,
+  token: string,
   provider_user_id?: string,
 ) => {
-  const headers: Record<string, string> = {
+  const headers = {
+    'Authorization': `Bearer ${token}`,
     'Content-Type': 'application/json',
   };
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
 
   const response = await fetch(`${API_URL}/initiate`, {
     method: 'POST',
@@ -78,13 +76,11 @@ export const initiateAdoption = async (
   return response.json();
 };
 
-export const finalizeAdoption = async (adoption_id: number, token: string | null) => {
-  const headers: Record<string, string> = {
+export const finalizeAdoption = async (adoption_id: number, token: string) => {
+  const headers = {
+    'Authorization': `Bearer ${token}`,
     'Content-Type': 'application/json',
   };
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
 
   const response = await fetch(`${API_URL}/${adoption_id}/finalize`, {
     method: 'PATCH',
@@ -100,12 +96,10 @@ export const finalizeAdoption = async (adoption_id: number, token: string | null
 };
 
 export const returnPokemon = async (pokemonEntityId: number, token: string) => {
-  const headers: Record<string, string> = {
+  const headers = {
+    'Authorization': `Bearer ${token}`,
     'Content-Type': 'application/json',
   };
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
 
   const response = await fetch(`${API_URL}/${pokemonEntityId}/return`, {
     method: 'POST',
