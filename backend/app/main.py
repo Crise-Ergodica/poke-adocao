@@ -1,11 +1,14 @@
-"""Author: Aurora Drumond Costa Magalhães"""
-
+"""
+Author: Aurora Drumond Costa Magalhães
+"""
 import httpx
 from typing import List, Optional
+
 
 """
 Main FastAPI application defining spatial endpoints.
 """
+
 
 import asyncio
 from fastapi import FastAPI, Depends, HTTPException
@@ -404,25 +407,10 @@ def list_pokemon_for_adoption(
     if user_pokemon.user.user_id != current_user.user_id:
         raise HTTPException(status_code=403, detail="Not authorized to list this pokemon")
 
-    # Find a matching PokemonEntity to link the adoption to.
-    # In a fully normalized DB, UserPokemon might link directly to PokemonEntity,
-    # but here we find one with the same pokemon_id (or create one if needed, though usually they exist).
-    # Since pokemon_entity_id is required in AdoptionCreate, we find the first available or create a dummy entity for listing.
-    # A better approach given the models: We can just use the pokemon_id to find an entity, but wait: UserPokemon has `pokemon_id`. Does it have an entity ID?
-    # The models show UserPokemon just has `pokemon_id`. We'll find an entity with that `pokemon_id` or just create one.
-    entity = db.query(PokemonEntity).filter(PokemonEntity.pokemon_id == user_pokemon.pokemon_id).first()
+    entity = db.query(PokemonEntity).filter(PokemonEntity.id == user_pokemon.pokemon_entity_id).first()
     if not entity:
-        # Create an entity so it can be listed on the board.
-        entity = PokemonEntity(
-            pokemon_id=user_pokemon.pokemon_id,
-            latitude=current_user.latitude,
-            longitude=current_user.longitude
-        )
-        db.add(entity)
-        db.commit()
-        db.refresh(entity)
+        raise HTTPException(status_code=404, detail="Pokemon Entity not found")
 
-    # Update entity location to the current user's location
     entity.latitude = current_user.latitude
     entity.longitude = current_user.longitude
     entity.version_id = entity.version_id + 1
@@ -541,8 +529,21 @@ def accept_adoption_endpoint(adoption_id: int, db: Session = Depends(get_db), cu
     adoption.receiver_user_id = current_user.user_id
     db.commit()
 
+    from app.models import UserPokemon
+    existing_ids = [up.id for up in db.query(UserPokemon).filter(UserPokemon.user_id == current_user.id).all()]
+
     try:
         updated_adoption = transition_state(db, adoption_id, AdoptionStatus.ADOPTED)
+
+        new_user_pokemon = db.query(UserPokemon).filter(
+            UserPokemon.user_id == current_user.id,
+            ~UserPokemon.id.in_(existing_ids)
+        ).first()
+
+        if new_user_pokemon:
+            new_user_pokemon.pokemon_entity_id = updated_adoption.pokemon_entity_id
+            db.commit()
+
         return updated_adoption
     except ValueError as e:
         # If transition fails, we should probably revert the receiver_user_id change

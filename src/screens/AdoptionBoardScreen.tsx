@@ -1,6 +1,7 @@
 /**
  * Author: Aurora Drumond Costa Magalhães
  */
+
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, ScrollView, useWindowDimensions } from 'react-native';
 import { Card, Text, Button, Snackbar, List, useTheme, ActivityIndicator, Avatar, TextInput, Searchbar, Switch, SegmentedButtons, Chip } from 'react-native-paper';
@@ -27,6 +28,8 @@ export default function AdoptionBoardScreen() {
   const [snackbarVisible, setSnackbarVisible] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
 
+  const genderMap: Record<string, string> = { 'Macho': 'male', 'Fêmea': 'female', 'Sem Gênero': 'genderless' };
+
   const fetchAdoptions = async () => {
     setLoading(true);
     try {
@@ -35,7 +38,7 @@ export default function AdoptionBoardScreen() {
         provider_name: searchProvider,
         type: selectedType,
         isShiny: isShiny ? true : undefined,
-        gender: gender,
+        gender: gender !== 'Todos' ? genderMap[gender] : undefined,
       }, token);
       setAdoptions(data || []);
     } catch (error: any) {
@@ -165,14 +168,14 @@ export default function AdoptionBoardScreen() {
                         description={() => (
                           <View>
                             <Text>Provider: {adoption.provider_user_id || 'Unknown'}</Text>
-                            {adoption.isShiny && (
+                            {adoption.pokemon?.is_shiny && (
                               <Text style={{ marginTop: 4, fontWeight: 'bold' }}>
                                 <MaterialCommunityIcons name="star-four-points" size={16} color="#FFD700" /> SHINY <MaterialCommunityIcons name="star-four-points" size={16} color="#FFD700" />
                               </Text>
                             )}
-                            {(adoption.type || adoption.gender) && (
+                            {(adoption.pokemon?.type_1 || adoption.pokemon?.gender) && (
                               <Text style={{ marginTop: 4 }}>
-                                {[adoption.type, adoption.gender].filter(Boolean).join(' | ')}
+                                {[adoption.pokemon?.type_1, adoption.pokemon?.gender].filter(Boolean).join(' | ')}
                               </Text>
                             )}
                           </View>
