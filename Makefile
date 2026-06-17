@@ -1,4 +1,4 @@
-.PHONY: install start-backend start-frontend test clean setup dev help
+.PHONY: install start-backend start-frontend test clean setup dev help db-rm db-init db-recreate
 
 ## Show this help message
 help:
@@ -35,3 +35,15 @@ clean: ## Remove all cache, build artifacts, and node_modules
 	find . -type d -name ".pytest_cache" -exec rm -rf {} +
 	rm -rf .expo
 	rm -rf node_modules
+
+## Database Management
+db-rm: ## Remove the SQLite database file
+	rm -f backend/poke_adocao.db
+	@echo "Database removed."
+
+db-init: ## Initialize database (Implicitly runs on server start, but ensures file existence)
+	touch backend/poke_adocao.db
+	@echo "Database file initialized."
+
+db-recreate: db-rm db-init ## Drop and recreate the database file
+	@echo "Database recreated."

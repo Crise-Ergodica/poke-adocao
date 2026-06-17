@@ -29,6 +29,7 @@ export default function ProfileScreen() {
     companionPokemonId,
     setCompanionPokemonId,
     token,
+    logout,
   } = useAuth();
 
   const [inputUrl, setInputUrl] = useState('');
@@ -125,6 +126,18 @@ export default function ProfileScreen() {
         <Text variant="headlineMedium" style={styles.title}>
           Profile Settings
         </Text>
+
+        <Card style={styles.card}>
+          <Card.Content>
+            <Button 
+              mode="outlined" 
+              onPress={logout}
+              textColor="red" // Opcional: para indicar uma ação destrutiva
+            >
+              Logout
+            </Button>
+          </Card.Content>
+        </Card>
 
         <Card style={styles.card}>
           <Card.Content style={styles.centerContent}>

@@ -135,7 +135,7 @@ export const updateCompanion = async (
     method: 'PATCH',
     headers,
     body: JSON.stringify({
-      companion_id: companionId,
+      companion_pokemon_id: companionId,
     }),
   });
 
