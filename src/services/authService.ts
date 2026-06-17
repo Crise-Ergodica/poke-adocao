@@ -70,3 +70,75 @@ export const updateIcon = async (userId: string, iconUrl: string, token: string 
 
   return response.json();
 };
+
+export const updateUsername = async (userId: string, newUsername: string, token: string | null) => {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  const response = await fetch(`${API_URL}/users/${userId}/username`, {
+    method: 'PATCH',
+    headers,
+    body: JSON.stringify({
+      username: newUsername,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => null);
+    throw new Error(errorData?.detail || 'Failed to update username');
+  }
+
+  return response.json();
+};
+
+export const updatePassword = async (userId: string, newPassword: string, token: string | null) => {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  const response = await fetch(`${API_URL}/users/${userId}/password`, {
+    method: 'PATCH',
+    headers,
+    body: JSON.stringify({
+      password: newPassword,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => null);
+    throw new Error(errorData?.detail || 'Failed to update password');
+  }
+
+  return response.json();
+};
+
+export const updateCompanion = async (userId: string, companionId: number, token: string | null) => {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  const response = await fetch(`${API_URL}/users/${userId}/companion`, {
+    method: 'PATCH',
+    headers,
+    body: JSON.stringify({
+      companion_id: companionId,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => null);
+    throw new Error(errorData?.detail || 'Failed to update companion');
+  }
+
+  return response.json();
+};
