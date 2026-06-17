@@ -615,7 +615,7 @@ def return_pokemon_endpoint(
 async def get_available_adoptions_endpoint(
     pokemon_name: Optional[str] = None,
     provider_name: Optional[str] = None,
-    pokemon_type: Optional[str] = None,
+    type: Optional[str] = None,
     is_shiny: Optional[bool] = None,
     gender: Optional[str] = None,
     db: Session = Depends(get_db)
@@ -626,7 +626,7 @@ async def get_available_adoptions_endpoint(
     Args:
         pokemon_name (Optional[str]): Optional Pokemon name to filter by.
         provider_name (Optional[str]): Optional provider name to filter by.
-        pokemon_type (Optional[str]): Optional Pokemon type to filter by.
+        type (Optional[str]): Optional Pokemon type to filter by.
         is_shiny (Optional[bool]): Optional shiny status to filter by.
         gender (Optional[str]): Optional gender to filter by.
         db (Session): Database session.
@@ -636,19 +636,10 @@ async def get_available_adoptions_endpoint(
     """
     pokemon_id = None
     if pokemon_name:
-        url = f"https://pokeapi.co/api/v2/pokemon/{pokemon_name.lower()}"
-        try:
-            async with httpx.AsyncClient() as client:
-                response = await client.get(url)
-                if response.status_code == 404:
-                    return []
-                response.raise_for_status()
-                data = response.json()
-                pokemon_id = data.get("id")
-        except httpx.RequestError:
-            raise HTTPException(status_code=503, detail="PokeAPI is currently unavailable.")
-        except httpx.HTTPStatusError:
-            raise HTTPException(status_code=503, detail="PokeAPI returned an error.")
+        if pokemon_name.isdigit():
+            pokemon_id = int(pokemon_name)
+        else:
+            return []
 
     from sqlalchemy import or_
 
@@ -661,8 +652,8 @@ async def get_available_adoptions_endpoint(
         query = query.outerjoin(User, Adoption.provider_user_id == User.user_id)
         query = query.filter(User.user_id.ilike(f"%{provider_name}%"))
 
-    if pokemon_type:
-        query = query.filter(or_(PokemonEntity.type_1 == pokemon_type, PokemonEntity.type_2 == pokemon_type))
+    if type:
+        query = query.filter(or_(PokemonEntity.type_1 == type, PokemonEntity.type_2 == type))
 
     if is_shiny is not None:
         query = query.filter(PokemonEntity.is_shiny == is_shiny)
