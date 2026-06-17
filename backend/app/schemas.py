@@ -65,15 +65,12 @@ class CompanionUpdate(BaseModel):
 class Token(BaseModel):
     """
     Schema for JWT token response.
-    
-    Attributes:
-        access_token (str): The JWT string.
-        token_type (str): The type of token (e.g., 'bearer').
-        user_id (str): The authenticated user's ID.
     """
     access_token: str
     token_type: str
     user_id: str
+    icon_url: Optional[str] = None
+    companion_pokemon_id: Optional[int] = None
 
 
 class PokemonRenameRequest(BaseModel):

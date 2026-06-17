@@ -8,7 +8,7 @@ import { jwtDecode } from 'jwt-decode';
 
 export default function LoginScreen() {
   const theme = useTheme();
-  const { setUserId, setToken } = useAuth();
+  const { setUserId, setToken, setIconUrl, setCompanionPokemonId } = useAuth();
   
   const [mode, setMode] = useState('login'); // 'login' or 'register'
   const [email, setEmail] = useState('');
@@ -69,6 +69,8 @@ export default function LoginScreen() {
       
       setToken(tokenData.access_token);
       setUserId(tokenData.user_id);
+      setIconUrl(tokenData.icon_url || null);
+      setCompanionPokemonId(tokenData.companion_pokemon_id || null);
 
     } catch (error: any) {
       setSnackbarMessage(error.message || "Authentication failed.");

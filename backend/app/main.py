@@ -207,16 +207,6 @@ def register_endpoint(request: UserCreate, db: Session = Depends(get_db)):
 def login_endpoint(request: UserLogin, db: Session = Depends(get_db)):
     """
     Authenticate a user and return a JWT.
-
-    Args:
-        request (UserLogin): The login request containing email and password.
-        db (Session): The database session.
-
-    Raises:
-        HTTPException: If authentication fails.
-
-    Returns:
-        Token: The access token response.
     """
     user = authenticate_user(db, request.email, request.password)
     if not user:
@@ -226,7 +216,15 @@ def login_endpoint(request: UserLogin, db: Session = Depends(get_db)):
             headers={"WWW-Authenticate": "Bearer"},
         )
     access_token = create_access_token(data={"sub": user.email})
-    return {"access_token": access_token, "token_type": "bearer", "user_id": user.user_id}
+    
+    # Retorne os dados do perfil recém-extraídos do banco
+    return {
+        "access_token": access_token, 
+        "token_type": "bearer", 
+        "user_id": user.user_id,
+        "icon_url": user.icon_url,
+        "companion_pokemon_id": user.companion_pokemon_id
+    }
 
 @app.post("/api/v1/location/update")
 def update_location(location: LocationUpdate, db: Session = Depends(get_db)):
