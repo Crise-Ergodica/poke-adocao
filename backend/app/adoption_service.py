@@ -112,7 +112,7 @@ def transition_state(db: Session, adoption_id: int, new_status: AdoptionStatus) 
         pokemon.version_id = pokemon.version_id + 1
 
         # Add to user's party
-        user_pokemon = UserPokemon(user_id=receiver.id, pokemon_id=pokemon.pokemon_id)
+        user_pokemon = UserPokemon(user_id=receiver.id, pokemon_id=pokemon.pokemon_id, pokemon_entity_id=pokemon.id)
         db.add(user_pokemon)
 
     try:
