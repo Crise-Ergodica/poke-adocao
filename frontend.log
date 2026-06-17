@@ -1,0 +1,42 @@
+npm run start
+
+> poke-adocao@1.0.0 start
+> expo start
+
+Starting project at /app
+Starting Metro Bundler
+The following packages should be updated for best compatibility with the installed expo version:
+  expo-asset@56.0.17 - expected version: ~12.0.13
+  expo-font@56.0.7 - expected version: ~14.0.12
+  expo-secure-store@56.0.4 - expected version: ~15.0.8
+  @types/jest@30.0.0 - expected version: 29.5.14
+  jest-expo@56.0.5 - expected version: ~54.0.17
+Your project may not work correctly until you install the expected versions of the packages.
+Waiting on http://localhost:8081
+Logs for your project will appear below.
+Web ./index.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web ./index.js ▓▓▓▓▓▓▓░░░░░░░░░ 48.8% (209/373)
+Web ./index.js ▓▓▓▓▓▓▓▓▓▓▓░░░░░ 73.2% (580/678)
+Web Bundled 8551ms index.js (814 modules)
+ LOG  [web] Logs will appear in the browser console
+Web ./index.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web Bundled 46ms index.js (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web ./index.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web Bundled 42ms index.js (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web ./index.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web Bundled 71ms index.js (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web ./index.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web Bundled 49ms index.js (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web ./index.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web Bundled 45ms index.js (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web ./index.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web Bundled 43ms index.js (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web ./index.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web Bundled 44ms index.js (1 module)
+ LOG  [web] Logs will appear in the browser console

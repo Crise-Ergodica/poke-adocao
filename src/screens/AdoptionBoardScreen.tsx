@@ -3,8 +3,10 @@
  */
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, ScrollView, useWindowDimensions } from 'react-native';
-import { Card, Text, Button, Snackbar, List, useTheme, ActivityIndicator, Avatar, TextInput, Searchbar } from 'react-native-paper';
+import { Card, Text, Button, Snackbar, List, useTheme, ActivityIndicator, Avatar, TextInput, Searchbar, Switch, SegmentedButtons, Chip } from 'react-native-paper';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAuth } from '../store/AuthContext';
+import { getAvailableAdoptions } from '../services/adoptionService';
 
 export default function AdoptionBoardScreen() {
   const theme = useTheme();
@@ -16,37 +18,25 @@ export default function AdoptionBoardScreen() {
   const [loading, setLoading] = useState(false);
   const [searchPokemon, setSearchPokemon] = useState('');
   const [searchProvider, setSearchProvider] = useState('');
+
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [isShiny, setIsShiny] = useState(false);
+  const [gender, setGender] = useState('Todos');
+  const [selectedType, setSelectedType] = useState<string | undefined>(undefined);
+
   const [snackbarVisible, setSnackbarVisible] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
 
-const fetchAdoptions = async () => {
+  const fetchAdoptions = async () => {
     setLoading(true);
     try {
-      const queryParams = new URLSearchParams();
-      if (searchPokemon) queryParams.append('pokemon_name', searchPokemon);
-      if (searchProvider) queryParams.append('provider_name', searchProvider);
-
-      const queryString = queryParams.toString() ? `?${queryParams.toString()}` : '';
-
-      const API_URL = 'http://localhost:8000/api/v1/adoptions';
-      const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-      };
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
-
-      const response = await fetch(`${API_URL}/available${queryString}`, {
-        method: 'GET',
-        headers,
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
-        throw new Error(errorData?.detail || 'Failed to fetch available adoptions');
-      }
-
-      const data = await response.json();
+      const data = await getAvailableAdoptions({
+        pokemon_name: searchPokemon,
+        provider_name: searchProvider,
+        type: selectedType,
+        isShiny: isShiny ? true : undefined,
+        gender: gender,
+      }, token);
       setAdoptions(data || []);
     } catch (error: any) {
       showSnackbar(error.message);
@@ -91,8 +81,47 @@ const fetchAdoptions = async () => {
                   style={[styles.input, isDesktop && { flex: 1, marginLeft: 8 }]}
                 />
               </View>
+              <Button mode="outlined" onPress={() => setShowAdvancedFilters(!showAdvancedFilters)} style={{ marginTop: 8, marginBottom: 8 }}>
+                {showAdvancedFilters ? "Hide Advanced Filters" : "Filtros Avançados"}
+              </Button>
+
+              {showAdvancedFilters && (
+                <View style={styles.advancedFiltersContainer}>
+                  <View style={styles.filterRow}>
+                    <Text variant="titleMedium" style={{ marginRight: 16 }}>Apenas Shiny</Text>
+                    <Switch value={isShiny} onValueChange={setIsShiny} />
+                  </View>
+
+                  <Text variant="titleMedium" style={{ marginTop: 16, marginBottom: 8 }}>Gender</Text>
+                  <SegmentedButtons
+                    value={gender}
+                    onValueChange={setGender}
+                    buttons={[
+                      { value: 'Todos', label: 'Todos' },
+                      { value: 'Macho', label: 'Macho' },
+                      { value: 'Fêmea', label: 'Fêmea' },
+                      { value: 'Sem Gênero', label: 'Sem Gênero' },
+                    ]}
+                  />
+
+                  <Text variant="titleMedium" style={{ marginTop: 16, marginBottom: 8 }}>Types</Text>
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.typesContainer}>
+                    {['Fogo', 'Água', 'Planta', 'Elétrico', 'Gelo', 'Lutador', 'Veneno', 'Terra', 'Voador', 'Psíquico', 'Inseto', 'Pedra', 'Fantasma', 'Dragão', 'Sombrio', 'Metálico', 'Fada', 'Normal'].map(type => (
+                      <Chip
+                        key={type}
+                        selected={selectedType === type}
+                        onPress={() => setSelectedType(selectedType === type ? undefined : type)}
+                        style={styles.chip}
+                      >
+                        {type}
+                      </Chip>
+                    ))}
+                  </ScrollView>
+                </View>
+              )}
+
               <Button mode="contained" onPress={handleSearch} style={styles.searchButton}>
-                Search
+                Aplicar Filtros
               </Button>
             </Card.Content>
           </Card>
@@ -109,7 +138,21 @@ const fetchAdoptions = async () => {
                     <Card.Content>
                       <List.Item
                         title={`Pokemon Entity ID: ${adoption.pokemon_entity_id}`}
-                        description={`Provider: ${adoption.provider_user_id || 'Unknown'}`}
+                        description={() => (
+                          <View>
+                            <Text>Provider: {adoption.provider_user_id || 'Unknown'}</Text>
+                            {adoption.isShiny && (
+                              <Text style={{ marginTop: 4, fontWeight: 'bold' }}>
+                                <MaterialCommunityIcons name="star-four-points" size={16} color="#FFD700" /> SHINY <MaterialCommunityIcons name="star-four-points" size={16} color="#FFD700" />
+                              </Text>
+                            )}
+                            {(adoption.type || adoption.gender) && (
+                              <Text style={{ marginTop: 4 }}>
+                                {[adoption.type, adoption.gender].filter(Boolean).join(' | ')}
+                              </Text>
+                            )}
+                          </View>
+                        )}
                         left={props => <Avatar.Icon size={40} icon="pokeball" />}
                         right={props => (
                           <Button mode="contained" onPress={() => showSnackbar("Adoption detail to be implemented")}>
@@ -179,5 +222,23 @@ const styles = StyleSheet.create({
   gridItem: {
     width: 'calc(50% - 16px)',
     marginHorizontal: 8,
+  },
+  advancedFiltersContainer: {
+    marginTop: 8,
+    marginBottom: 8,
+    padding: 8,
+    backgroundColor: 'rgba(0,0,0,0.03)',
+    borderRadius: 8,
+  },
+  filterRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  typesContainer: {
+    flexDirection: 'row',
+    paddingBottom: 8,
+  },
+  chip: {
+    marginRight: 8,
   }
 });
