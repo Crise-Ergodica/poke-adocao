@@ -17,11 +17,13 @@ const STATIC_AVATARS = [
 export default function ProfileScreen() {
   const theme = useTheme();
   const { userId, setUserId, iconUrl, setIconUrl, companionPokemonId, setCompanionPokemonId, token } = useAuth();
+  
   const [inputUrl, setInputUrl] = useState('');
   const [usernameInput, setUsernameInput] = useState('');
   const [passwordInput, setPasswordInput] = useState('');
   const [companionInput, setCompanionInput] = useState('');
   const [loading, setLoading] = useState(false);
+  
   const [snackbarVisible, setSnackbarVisible] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
 
@@ -38,8 +40,12 @@ export default function ProfileScreen() {
 
     setLoading(true);
     try {
+      // 1. Envia para o banco de dados
       await updateIcon(userId, url, token);
-      setIconUrl(url);
+      
+      // 2. Persiste fisicamente no SecureStore do celular
+      setIconUrl(url); 
+      
       showSnackbar('Profile icon updated successfully!');
       setInputUrl('');
     } catch (error: any) {
@@ -54,7 +60,7 @@ export default function ProfileScreen() {
     setLoading(true);
     try {
       await updateUsername(userId, usernameInput, token);
-      setUserId(usernameInput);
+      setUserId(usernameInput); // Atualiza o contexto global
       showSnackbar('Username updated successfully!');
       setUsernameInput('');
     } catch (error: any) {
@@ -82,12 +88,15 @@ export default function ProfileScreen() {
     if (!userId || !token) return;
     setLoading(true);
     try {
-      const parsedId = parseInt(companionInput);
+      // O uso do radix (10) é estritamente necessário para garantir a conversão correta de base
+      const parsedId = parseInt(companionInput, 10);
+      
       if (isNaN(parsedId) || parsedId < 1 || parsedId > 1025) {
          throw new Error('Please enter a valid PokeAPI ID between 1 and 1025.');
       }
+      
       await updateCompanion(userId, parsedId, token);
-      setCompanionPokemonId(parsedId);
+      setCompanionPokemonId(parsedId); // Atualiza o contexto global e o armazenamento seguro
       showSnackbar('Companion Pokemon updated successfully!');
       setCompanionInput('');
     } catch (error: any) {
