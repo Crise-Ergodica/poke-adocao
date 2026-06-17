@@ -13,11 +13,10 @@ describe('pokemonService', () => {
   });
 
   it('spawnPokemon builds correct payload', async () => {
-    await spawnPokemon(40.0, -73.0);
-    expect(global.fetch).toHaveBeenCalledWith('http://localhost:8000/api/v1/map/spawn', {
+    await spawnPokemon(40.0, -73.0, 'dummy_token');
+    expect(global.fetch).toHaveBeenCalledWith('http://localhost:8000/api/v1/map/spawn?latitude=40&longitude=-73', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ latitude: 40.0, longitude: -73.0 }),
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer dummy_token' },
     });
   });
 
