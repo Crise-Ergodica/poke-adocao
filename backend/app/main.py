@@ -103,6 +103,10 @@ async def pokemon_spawner_task():
             db.close()
 
 @app.on_event("startup")
+def startup_event():
+    Base.metadata.create_all(bind=engine)
+
+@app.on_event("startup")
 async def startup_event():
     asyncio.create_task(pokemon_spawner_task())
 
