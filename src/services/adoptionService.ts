@@ -6,6 +6,44 @@
 
 const API_URL = 'http://localhost:8000/api/v1/adoptions'; // Adjust as needed for local network
 
+export interface GetAvailableAdoptionsParams {
+  pokemon_name?: string;
+  provider_name?: string;
+  type?: string;
+  isShiny?: boolean;
+  gender?: string;
+}
+
+export const getAvailableAdoptions = async (params: GetAvailableAdoptionsParams, token: string | null) => {
+  const queryParams = new URLSearchParams();
+  if (params.pokemon_name) queryParams.append('pokemon_name', params.pokemon_name);
+  if (params.provider_name) queryParams.append('provider_name', params.provider_name);
+  if (params.type) queryParams.append('type', params.type);
+  if (params.isShiny !== undefined) queryParams.append('isShiny', String(params.isShiny));
+  if (params.gender && params.gender !== 'Todos') queryParams.append('gender', params.gender);
+
+  const queryString = queryParams.toString() ? `?${queryParams.toString()}` : '';
+
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  const response = await fetch(`${API_URL}/available${queryString}`, {
+    method: 'GET',
+    headers,
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => null);
+    throw new Error(errorData?.detail || 'Failed to fetch available adoptions');
+  }
+
+  return response.json();
+};
+
 export const initiateAdoption = async (pokemon_entity_id: number, receiver_user_id: string, token: string | null, provider_user_id?: string) => {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',

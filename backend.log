@@ -1,0 +1,21 @@
+cd backend && poetry run uvicorn app.main:app --reload
+INFO:     Will watch for changes in these directories: ['/app/backend']
+INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+INFO:     Started reloader process [94906] using StatReload
+INFO:     Started server process [96944]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     127.0.0.1:58570 - "OPTIONS /api/v1/auth/register HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58582 - "POST /api/v1/auth/register HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58582 - "OPTIONS /api/v1/auth/login HTTP/1.1" 200 OK
+/home/jules/.cache/pypoetry/virtualenvs/poke-adocao-vsmFjuTQ-py3.12/lib/python3.12/site-packages/jwt/api_jwt.py:147: InsecureKeyLengthWarning: The HMAC key is 31 bytes long, which is below the minimum recommended length of 32 bytes for SHA256. See RFC 7518 Section 3.2.
+  return self._jws.encode(
+INFO:     127.0.0.1:58570 - "POST /api/v1/auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57252 - "OPTIONS /api/v1/auth/register HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57254 - "POST /api/v1/auth/register HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:49950 - "OPTIONS /api/v1/auth/register HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49952 - "POST /api/v1/auth/register HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49952 - "OPTIONS /api/v1/auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49950 - "POST /api/v1/auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49950 - "OPTIONS /api/v1/adoptions/available HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49952 - "GET /api/v1/adoptions/available HTTP/1.1" 200 OK
