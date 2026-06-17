@@ -471,6 +471,9 @@ def return_pokemon_endpoint(
 async def get_available_adoptions_endpoint(
     pokemon_name: Optional[str] = None,
     provider_name: Optional[str] = None,
+    pokemon_type: Optional[str] = None,
+    is_shiny: Optional[bool] = None,
+    gender: Optional[str] = None,
     db: Session = Depends(get_db)
 ):
     """
@@ -479,6 +482,9 @@ async def get_available_adoptions_endpoint(
     Args:
         pokemon_name (Optional[str]): Optional Pokemon name to filter by.
         provider_name (Optional[str]): Optional provider name to filter by.
+        pokemon_type (Optional[str]): Optional Pokemon type to filter by.
+        is_shiny (Optional[bool]): Optional shiny status to filter by.
+        gender (Optional[str]): Optional gender to filter by.
         db (Session): Database session.
 
     Returns:
@@ -500,5 +506,24 @@ async def get_available_adoptions_endpoint(
         except httpx.HTTPStatusError:
             raise HTTPException(status_code=503, detail="PokeAPI returned an error.")
 
-    adoptions = get_available_adoptions(db, pokemon_id=pokemon_id, provider_name=provider_name)
-    return adoptions
+    from sqlalchemy import or_
+
+    query = db.query(Adoption).join(PokemonEntity).filter(Adoption.status == AdoptionStatus.NEW)
+
+    if pokemon_id is not None:
+        query = query.filter(PokemonEntity.pokemon_id == pokemon_id)
+
+    if provider_name is not None:
+        query = query.outerjoin(User, Adoption.provider_user_id == User.user_id)
+        query = query.filter(User.user_id.ilike(f"%{provider_name}%"))
+
+    if pokemon_type:
+        query = query.filter(or_(PokemonEntity.type_1 == pokemon_type, PokemonEntity.type_2 == pokemon_type))
+
+    if is_shiny is not None:
+        query = query.filter(PokemonEntity.is_shiny == is_shiny)
+
+    if gender:
+        query = query.filter(PokemonEntity.gender == gender)
+
+    return query.all()
