@@ -379,10 +379,12 @@ const styles = StyleSheet.create({
   },
   mobileColumns: {
     flexDirection: 'column',
+    marginBottom: 20, // Espaçamento entre as duas listas empilhadas
   },
   column: {
-    flex: 1,
+    // Flex: 1 removido para evitar que o motor de layout tente forçar alturas colidentes
     marginHorizontal: 8,
+    marginBottom: 24, // Espaçamento inferior garantindo que a lista de baixo nunca suba
   },
   sectionTitle: {
     marginBottom: 12,

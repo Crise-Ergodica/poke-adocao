@@ -67,13 +67,10 @@ def transition_state(db: Session, adoption_id: int, new_status: AdoptionStatus, 
         if not pokemon:
              raise ValueError("Pokemon entity not found")
 
-        # Ensure no other adoption has been finalized for this pokemon
-        existing_adoption = db.query(Adoption).filter(
-             Adoption.pokemon_entity_id == pokemon.id,
-             Adoption.status == AdoptionStatus.ADOPTED
-        ).first()
+        # Check actual ownership state instead of historical ledger
+        is_owned = db.query(UserPokemon).filter(UserPokemon.pokemon_entity_id == pokemon.id).first()
 
-        if existing_adoption:
+        if is_owned:
              raise ValueError("This Pokemon has already been adopted.")
 
         receiver = db.query(User).filter(User.user_id == adoption.receiver_user_id).first()

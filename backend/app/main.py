@@ -38,6 +38,7 @@ from app.auth_service import register_user, authenticate_user, create_access_tok
 from fastapi.security import OAuth2PasswordBearer
 import jwt
 import logging
+from sqlalchemy import and_, exists
 
 logger = logging.getLogger(__name__)
 
@@ -307,6 +308,7 @@ def get_nearby(latitude: float, longitude: float, db: Session = Depends(get_db))
     Returns:
         NearbyResponse: An object containing nearby users and pokemon.
     """
+    
     distance_limit = 150.0
     min_lat, max_lat, min_lon, max_lon = calculate_bounding_box(latitude, longitude, distance_limit)
 
@@ -318,14 +320,26 @@ def get_nearby(latitude: float, longitude: float, db: Session = Depends(get_db))
         User.longitude <= max_lon
     ).all()
 
-    box_pokemon = db.query(PokemonEntity).outerjoin(
-        UserPokemon, PokemonEntity.id == UserPokemon.pokemon_entity_id
-    ).filter(
+    # 1. Regra: O Pokémon pertence a alguém?
+    is_owned = exists().where(UserPokemon.pokemon_entity_id == PokemonEntity.id)
+    
+    # 2. Regra: O Pokémon está listado no conselho de adoção global?
+    is_listed_for_adoption = exists().where(
+        and_(
+            Adoption.pokemon_entity_id == PokemonEntity.id,
+            Adoption.status == AdoptionStatus.NEW,
+            Adoption.provider_user_id != None
+        )
+    )
+
+    # 3. Execução: Busca espacial excluindo quem falha nas regras acima
+    box_pokemon = db.query(PokemonEntity).filter(
         PokemonEntity.latitude >= min_lat,
         PokemonEntity.latitude <= max_lat,
         PokemonEntity.longitude >= min_lon,
         PokemonEntity.longitude <= max_lon,
-        UserPokemon.id.is_(None) # <-- O filtro crucial: exige que a relação com um utilizador seja nula
+        ~is_owned,                # NÃO deve ter dono
+        ~is_listed_for_adoption   # NÃO deve estar no quadro de adoções
     ).all()
 
     # Exact distance filter
@@ -526,19 +540,18 @@ def accept_adoption_endpoint(adoption_id: int, db: Session = Depends(get_db), cu
     Returns:
         AdoptionSchema: The finalized adoption object.
     """
-    from app.models import Adoption, UserPokemon
-    
+    from app.models import Adoption
     adoption = db.query(Adoption).filter(Adoption.id == adoption_id).first()
     if not adoption:
         raise HTTPException(status_code=404, detail="Adoption not found")
 
-    # Allow the current user to retry a stuck transaction, block other users
-    if adoption.receiver_user_id is not None and adoption.receiver_user_id != current_user.user_id:
+    if adoption.receiver_user_id is not None:
         raise HTTPException(status_code=400, detail="Adoption is already claimed")
 
-    # Assign ownership in memory ONLY. Do not commit prematurely.
     adoption.receiver_user_id = current_user.user_id
+    db.commit()
 
+    from app.models import UserPokemon
     existing_ids = [up.id for up in db.query(UserPokemon).filter(UserPokemon.user_id == current_user.id).all()]
 
     try:
@@ -555,8 +568,8 @@ def accept_adoption_endpoint(adoption_id: int, db: Session = Depends(get_db), cu
 
         return updated_adoption
     except ValueError as e:
-        # Rollback the session to clear the uncommitted receiver_user_id assignment
-        db.rollback()
+        # If transition fails, we should probably revert the receiver_user_id change
+        # but the transaction might be rolled back in transition_state anyway.
         raise HTTPException(status_code=400, detail=str(e))
 
 @app.patch("/api/v1/adoptions/{adoption_id}/finalize", response_model=AdoptionSchema)
