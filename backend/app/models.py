@@ -64,6 +64,7 @@ class UserPokemon(Base):
     user_id = Column(Integer, ForeignKey('users.id'))
     pokemon_id = Column(Integer, index=True)
     pokemon_entity_id = Column(Integer, ForeignKey('pokemon_entities.id'), nullable=True)
+    name = Column(String, nullable=True)
 
     user = relationship("User", back_populates="party")
 

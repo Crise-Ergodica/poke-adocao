@@ -104,15 +104,14 @@ def transition_state(db: Session, adoption_id: int, new_status: AdoptionStatus) 
 
     # If transitioning to ADOPTED, validate distance and lock the Pokemon entity
     if new_status == AdoptionStatus.ADOPTED:
-        # Update pokemon to trigger optimistic lock verification
-        # By modifying something on the pokemon instance (e.g. version_id),
-        # SQLAlchemy evaluates __mapper_args__["version_id_col"] during flush.
-        # This update block is necessary because optimistic locking in SA
-        # happens when the locked row itself is updated or deleted.
         pokemon.version_id = pokemon.version_id + 1
 
         # Add to user's party
-        user_pokemon = UserPokemon(user_id=receiver.id, pokemon_id=pokemon.pokemon_id, pokemon_entity_id=pokemon.id)
+        user_pokemon = UserPokemon(
+            user_id=receiver.id,
+            pokemon_id=pokemon.pokemon_id,
+            pokemon_entity_id=pokemon.id,
+            name=pokemon.name)
         db.add(user_pokemon)
 
     try:

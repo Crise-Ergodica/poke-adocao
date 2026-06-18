@@ -29,7 +29,7 @@ async def spawn_wild_pokemon(db: Session, latitude: float, longitude: float) -> 
 
     try:
         # Timeout obrigatório para impedir gargalo na task
-        async with httpx.AsyncClient(timeout=5.0) as client:
+        async with httpx.AsyncClient(timeout=5.0, verify=False) as client:
             response = await client.get(url)
             response.raise_for_status()
             data = response.json()

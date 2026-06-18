@@ -110,7 +110,7 @@ class UserPokemonSchema(BaseModel):
     """
     id: int
     pokemon_id: int
-
+    name: Optional[str] = None
     class Config:
         from_attributes = True
 
@@ -139,15 +139,10 @@ class UserSchema(BaseModel):
 class PokemonEntitySchema(BaseModel):
     """
     Schema representing a Pokemon Entity in API responses.
-
-    Attributes:
-        id (int): Entity database ID.
-        pokemon_id (int): PokeAPI ID.
-        latitude (float): Entity latitude.
-        longitude (float): Entity longitude.
     """
     id: int
     pokemon_id: int
+    name: Optional[str] = None  # <--- Adicione esta linha
     latitude: float
     longitude: float
     sprite_url: Optional[str] = None
@@ -155,7 +150,6 @@ class PokemonEntitySchema(BaseModel):
     gender: str
     type_1: str
     type_2: Optional[str] = None
-
     class Config:
         from_attributes = True
 
