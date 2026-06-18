@@ -113,3 +113,22 @@ export const returnPokemon = async (pokemonEntityId: number, token: string) => {
 
   return response.json();
 };
+
+export const acceptAdoption = async (adoption_id: number, token: string) => {
+  const headers = {
+    'Authorization': `Bearer ${token}`,
+    'Content-Type': 'application/json',
+  };
+
+  const response = await fetch(`${API_URL}/${adoption_id}/accept`, {
+    method: 'POST',
+    headers,
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => null);
+    throw new Error(errorData?.detail || 'Failed to accept adoption');
+  }
+
+  return response.json();
+};

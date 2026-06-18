@@ -37,7 +37,7 @@ def create_adoption(db: Session, pokemon_entity_id: int, receiver_user_id: str =
     db.refresh(adoption)
     return adoption
 
-def transition_state(db: Session, adoption_id: int, new_status: AdoptionStatus) -> Adoption:
+def transition_state(db: Session, adoption_id: int, new_status: AdoptionStatus, ignore_distance: bool = False) -> Adoption:    
     """
     Transitions an adoption to a new state with validations and row locking.
 
@@ -59,6 +59,8 @@ def transition_state(db: Session, adoption_id: int, new_status: AdoptionStatus) 
 
     # If transitioning to ADOPTED, validate distance and lock the Pokemon entity
     if new_status == AdoptionStatus.ADOPTED:
+        # Validate pokemon
+        pokemon = db.query(PokemonEntity).filter(PokemonEntity.id == adoption.pokemon_entity_id).first()
         # Validate pokemon
         pokemon = db.query(PokemonEntity).filter(PokemonEntity.id == adoption.pokemon_entity_id).first()
 
@@ -88,10 +90,11 @@ def transition_state(db: Session, adoption_id: int, new_status: AdoptionStatus) 
                 target_lat = provider.latitude
                 target_lon = provider.longitude
 
-        # Validate distance <= 50 meters
-        distance = haversine_distance(receiver.latitude, receiver.longitude, target_lat, target_lon)
-        if distance > 50.0:
-            raise ValueError(f"Distance exceeds 50 meters. Current distance is {distance:.2f} meters.")
+        # Validate distance <= 50 meters, unless explicitly bypassed
+        if not ignore_distance:
+            distance = haversine_distance(receiver.latitude, receiver.longitude, target_lat, target_lon)
+            if distance > 50.0:
+                raise ValueError(f"Distance exceeds 50 meters. Current distance is {distance:.2f} meters.")
 
         # Check party limit
         party_count = db.query(UserPokemon).filter(UserPokemon.user_id == receiver.id).count()

@@ -318,11 +318,14 @@ def get_nearby(latitude: float, longitude: float, db: Session = Depends(get_db))
         User.longitude <= max_lon
     ).all()
 
-    box_pokemon = db.query(PokemonEntity).filter(
+    box_pokemon = db.query(PokemonEntity).outerjoin(
+        UserPokemon, PokemonEntity.id == UserPokemon.pokemon_entity_id
+    ).filter(
         PokemonEntity.latitude >= min_lat,
         PokemonEntity.latitude <= max_lat,
         PokemonEntity.longitude >= min_lon,
-        PokemonEntity.longitude <= max_lon
+        PokemonEntity.longitude <= max_lon,
+        UserPokemon.id.is_(None) # <-- O filtro crucial: exige que a relação com um utilizador seja nula
     ).all()
 
     # Exact distance filter
@@ -523,22 +526,23 @@ def accept_adoption_endpoint(adoption_id: int, db: Session = Depends(get_db), cu
     Returns:
         AdoptionSchema: The finalized adoption object.
     """
-    from app.models import Adoption
+    from app.models import Adoption, UserPokemon
+    
     adoption = db.query(Adoption).filter(Adoption.id == adoption_id).first()
     if not adoption:
         raise HTTPException(status_code=404, detail="Adoption not found")
 
-    if adoption.receiver_user_id is not None:
+    # Allow the current user to retry a stuck transaction, block other users
+    if adoption.receiver_user_id is not None and adoption.receiver_user_id != current_user.user_id:
         raise HTTPException(status_code=400, detail="Adoption is already claimed")
 
+    # Assign ownership in memory ONLY. Do not commit prematurely.
     adoption.receiver_user_id = current_user.user_id
-    db.commit()
 
-    from app.models import UserPokemon
     existing_ids = [up.id for up in db.query(UserPokemon).filter(UserPokemon.user_id == current_user.id).all()]
 
     try:
-        updated_adoption = transition_state(db, adoption_id, AdoptionStatus.ADOPTED)
+        updated_adoption = transition_state(db, adoption_id, AdoptionStatus.ADOPTED, ignore_distance=True)
 
         new_user_pokemon = db.query(UserPokemon).filter(
             UserPokemon.user_id == current_user.id,
@@ -551,8 +555,8 @@ def accept_adoption_endpoint(adoption_id: int, db: Session = Depends(get_db), cu
 
         return updated_adoption
     except ValueError as e:
-        # If transition fails, we should probably revert the receiver_user_id change
-        # but the transaction might be rolled back in transition_state anyway.
+        # Rollback the session to clear the uncommitted receiver_user_id assignment
+        db.rollback()
         raise HTTPException(status_code=400, detail=str(e))
 
 @app.patch("/api/v1/adoptions/{adoption_id}/finalize", response_model=AdoptionSchema)

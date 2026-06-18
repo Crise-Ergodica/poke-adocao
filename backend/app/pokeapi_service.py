@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 async def spawn_wild_pokemon(db: Session, latitude: float, longitude: float) -> PokemonEntity:
     pokemon_id = random.randint(1, 151)
-    url = f"https://pokeapi.co/api/v2/pokemon/{pokemon_id}"
+    url = f"https://raw.githubusercontent.com/PokeAPI/api-data/master/data/api/v2/pokemon/{pokemon_id}/index.json"
     
     # Previsibilidade (Fallback): Se a API falhar, deduzimos a URL da imagem.
     sprite_url = f"https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/{pokemon_id}.png"
@@ -26,17 +26,24 @@ async def spawn_wild_pokemon(db: Session, latitude: float, longitude: float) -> 
     type_2 = None
     
     pokemon_name = "unknown"
+    
+    custom_headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
+        "Accept": "application/json, text/plain, */*",
+        "Accept-Language": "en-US,en;q=0.9,pt-BR;q=0.8,pt;q=0.7",
+        "Referer": "https://pokeapi.co/",
+        "Connection": "keep-alive"
+    }
 
     try:
-        # Timeout obrigatório para impedir gargalo na task
-        async with httpx.AsyncClient(timeout=5.0, verify=False) as client:
+        # Injeção dos cabeçalhos fortalecidos
+        async with httpx.AsyncClient(timeout=5.0, verify=False, headers=custom_headers) as client:
             response = await client.get(url)
             response.raise_for_status()
             data = response.json()
             
             sprite_url = data.get("sprites", {}).get("front_default") or sprite_url
             
-            # 1. Intercepta o nome direto da PokeAPI
             pokemon_name = data.get("name", "unknown").capitalize() 
 
             types = data.get("types", [])
