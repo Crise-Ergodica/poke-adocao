@@ -623,18 +623,21 @@ async def get_available_adoptions_endpoint(
     """
     Get a list of available adoptions.
 
-    Args:
-        pokemon_name (Optional[str]): Optional Pokemon name to filter by.
-        provider_name (Optional[str]): Optional provider name to filter by.
-        type (Optional[str]): Optional Pokemon type to filter by.
-        is_shiny (Optional[bool]): Optional shiny status to filter by.
-        gender (Optional[str]): Optional gender to filter by.
-        db (Session): Database session.
+    Observação importante:
+    O model Adoption possui a relação chamada pokemon_entity,
+    mas o schema AdoptionSchema espera o campo pokemon.
 
-    Returns:
-        List[AdoptionSchema]: A list of available adoptions.
+    Por isso o retorno é montado manualmente, copiando:
+    adoption.pokemon_entity -> pokemon
+
+    Isso permite que o frontend receba:
+    adoption.pokemon.pokemon_id
+    adoption.pokemon.type_1
+    adoption.pokemon.gender
+    adoption.pokemon.is_shiny
     """
     pokemon_id = None
+
     if pokemon_name:
         if pokemon_name.isdigit():
             pokemon_id = int(pokemon_name)
@@ -642,8 +645,14 @@ async def get_available_adoptions_endpoint(
             return []
 
     from sqlalchemy import or_
+    from sqlalchemy.orm import joinedload
 
-    query = db.query(Adoption).join(PokemonEntity).filter(Adoption.status == AdoptionStatus.NEW)
+    query = (
+        db.query(Adoption)
+        .options(joinedload(Adoption.pokemon_entity))
+        .join(PokemonEntity)
+        .filter(Adoption.status == AdoptionStatus.NEW)
+    )
 
     if pokemon_id is not None:
         query = query.filter(PokemonEntity.pokemon_id == pokemon_id)
@@ -661,7 +670,21 @@ async def get_available_adoptions_endpoint(
     if gender:
         query = query.filter(PokemonEntity.gender == gender)
 
-    return query.all()
+    adoptions = query.all()
+
+    return [
+        {
+            "id": adoption.id,
+            "pokemon_entity_id": adoption.pokemon_entity_id,
+            "provider_user_id": adoption.provider_user_id,
+            "receiver_user_id": adoption.receiver_user_id,
+            "status": adoption.status,
+            "created_at": adoption.created_at,
+            "updated_at": adoption.updated_at,
+            "pokemon": adoption.pokemon_entity,
+        }
+        for adoption in adoptions
+    ]
 
 # --- # LEGACY CODE, REPLACED BY "async def spawn_pokemon_endpoint" ---
 # @app.post("/api/v1/map/spawn")
