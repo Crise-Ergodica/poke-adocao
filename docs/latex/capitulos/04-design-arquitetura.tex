@@ -1,0 +1,14 @@
+\chapter{Conclusão}
+
+O desenvolvimento do sistema Poke-Adocao permitiu a concretização da arquitetura de geolocalização e gerenciamento de estado proposta inicialmente. Os objetivos gerais e específicos delineados no Capítulo 3 foram integralmente alcançados, com a entrega de um sistema funcional que integra uma API robusta de \textit{backend} em Python e FastAPI a uma interface móvel multiplataforma em React Native. A validação das regras de negócio, assegurada pela Máquina de Estados Finitos (FSM) e pelo motor espacial baseado na fórmula de Haversine, demonstrou que a arquitetura proposta é capaz de garantir a integridade transacional mesmo sob condições de concorrência e restrições de proximidade física.
+
+Do ponto de vista da engenharia de \textit{software}, os maiores gargalos técnicos enfrentados concentraram-se na mitigação da latência de processamento espacial e na garantia da consistência de dados em ambiente distribuído. A complexidade de calcular distâncias geodésicas em tempo real, aliada à necessidade de evitar condições de corrida (\textit{race conditions}) na adoção de entidades únicas, exigiu a implementação de uma camada de bloqueio otimista (\textit{optimistic locking}) no banco de dados. A transição para um modelo de monorrepositório foi determinante para superar a fricção de desalinhamento de contratos entre as camadas, permitindo que a equipe focasse no refinamento dos algoritmos de validação em vez de na gestão de dependências externas.
+
+Quanto aos trabalhos futuros, o projeto mantém uma lista estratégica de dívidas técnicas e melhorias planejadas para a próxima fase de maturação. O plano de expansão inclui:
+\begin{itemize}
+    \item \textbf{Escalabilidade Geográfica:} Implementação de índices espaciais nativos (\textit{PostGIS}) para substituir a pré-filtragem por \textit{Bounding Box} manual, elevando a performance das consultas para cenários de alta densidade de usuários.
+    \item \textbf{Dívida Técnica de \textit{Frontend}:} Migração dos componentes de interface para um sistema de temas totalmente tokenizado, aumentando a manutenibilidade do design.
+    \item \textbf{Novas Funcionalidades:} Desenvolvimento de um motor de \textit{caching} distribuído (Redis) para persistir temporariamente as telemetrias de localização dos usuários e reduzir o custo de escrita direta no banco relacional.
+\end{itemize}
+
+Em suma, o projeto Poke-Adocao demonstra a viabilidade de construir aplicações de \textit{Location-Based Services} complexas utilizando um \textit{stack} tecnológico moderno e rigoroso, estabelecendo uma fundação sólida para futuras iterações e melhorias de escalabilidade de engenharia.

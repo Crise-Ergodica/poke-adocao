@@ -1,0 +1,61 @@
+\chapter{Explicação de Trechos Importantes de Código}
+
+A implementação do sistema fundamenta-se na integração entre a captura de sensores nativos no \textit{frontend} e a validação estrita de regras de negócio no \textit{backend}. Abaixo, detalham-se os componentes críticos que operacionalizam a telemetria, o gerenciamento de identidade e a validação espacial.
+
+\section{Captura e Telemetria de Geolocalização}
+
+A interface móvel abstrai a complexidade do hardware via \textit{hooks} customizados. O \texttt{useUserLocation.ts} implementa a observação passiva de coordenadas, integrando o \texttt{expo-location} para garantir a precisão necessária às validações da FSM. A escolha pela precisão \texttt{High} e um intervalo de \texttt{timeInterval: 5000} equilibra a responsividade do radar com o consumo de energia do dispositivo.
+
+\begin{lstlisting}[style=estiloJS, caption={Hook de telemetria para captura de geolocalização}]
+export const useUserLocation = () => {
+  const [location, setLocation] = useState<Location.LocationObject | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') return;
+
+      await Location.watchPositionAsync({
+        accuracy: Location.Accuracy.High,
+        timeInterval: 5000,
+      }, (newLocation) => {
+        setLocation(newLocation);
+      });
+    })();
+  }, []);
+
+  return location;
+};
+\end{lstlisting}
+
+\section{Gerenciamento de Autenticação e Navegação}
+
+O controle de sessão é consolidado no \texttt{AuthContext.tsx}, que atua como o \textit{Provider} central. A arquitetura evita a propagação excessiva de propriedades (\textit{prop-drilling}) ao injetar o estado do usuário diretamente na árvore de navegação. No \texttt{RootNavigator.tsx}, a condicional de renderização assegura que o estado de autenticação dite a composição da \textit{stack} de navegação, roteando o usuário dinamicamente entre as telas de \textit{login} e a aplicação funcional (\texttt{MainTabs.tsx}).
+
+\begin{lstlisting}[style=estiloJS, caption={Navegação condicional baseada no contexto de autenticação}]
+const RootNavigator = () => {
+  const { user } = useContext(AuthContext);
+
+  return (
+    <NavigationContainer>
+      {user ? <MainTabs /> : <LoginScreen />}
+    </NavigationContainer>
+  );
+};
+\end{lstlisting}
+
+\section{Validação Espacial no Servidor}
+
+Diferente do \textit{frontend}, que provê a telemetria, a inteligência do sistema reside no \texttt{spatial\_service.py}. A validação de proximidade para a adoção de um Pokémon não confia no dispositivo do usuário; o servidor recalcula a distância geodésica em relação à coordenada absoluta da entidade persistida no banco.
+
+\begin{lstlisting}[style=estiloPython, caption={Validação de proximidade via Haversine no servidor}]
+def is_within_distance(lat1, lon1, lat2, lon2, limit=50):
+    dlat = radians(lat2 - lat1)
+    dlon = radians(lon2 - lon1)
+    a = sin(dlat/2)**2 + cos(radians(lat1)) * cos(radians(lat2)) * sin(dlon/2)**2
+    c = 2 * atan2(sqrt(a), sqrt(1-a))
+    distance = 6371000 * c  # Distancia em metros
+    return distance <= limit
+\end{lstlisting}
+
+Este trecho é o núcleo da segurança da FSM. Ao executar esta validação isoladamente no servidor, o sistema blinda-se contra \textit{spoofing} de GPS, garantindo que o estado de \textit{ADOPTED} só seja atingido quando a proximidade física for matematicamente comprovada pela fórmula de Haversine.

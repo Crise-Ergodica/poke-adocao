@@ -1,0 +1,161 @@
+% ------------------------------------------------------------------------
+% Configuração e Arquitetura do Template LaTeX
+% Desenvolvido por: Aurora Drumond Costa Magalhães
+% Ano: 2026
+% ------------------------------------------------------------------------
+
+\documentclass[
+    12pt,
+    openright,
+    oneside,
+    a4paper,
+    english,
+    brazil
+    ]{abntex2}
+
+% --- PACOTES GERAIS ---
+\usepackage{lmodern}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{indentfirst}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage[alf]{abntex2cite}
+
+% --- CONFIGURAÇÃO DO AMBIENTE QUADRO ---
+\newcommand{\quadroname}{Quadro}
+\newcommand{\listofquadrosname}{Lista de quadros}
+
+% Utilizando a sintaxe estrita do pacote 'float' (\newfloat{nome}{posicionamento}{extensão}[contador])
+\floatstyle{plaintop} % Garante que a legenda fique acima do quadro
+\newfloat{quadro}{htb}{loq}[chapter]
+\floatname{quadro}{\quadroname}
+
+% Cria a lista de quadros associada ao sumário
+\newlistof{listofquadros}{loq}{\listofquadrosname}
+\newlistentry{quadro}{loq}{0}
+
+% Define a numeração contínua (evita Quadro 1.1, Quadro 1.2)
+\counterwithout{quadro}{chapter}
+
+% Configura a formatação de exibição da Lista de Quadros no PDF
+\renewcommand{\cftquadroname}{\quadroname\space}
+\renewcommand*{\cftquadroaftersnum}{\hfill--\hfill}
+
+% --- IMPORTA SEUS ESTILOS PERSONALIZADOS ---
+% Substitua pelos caminhos reais dos seus arquivos de estilo (.sty), caso possua.
+\usepackage{styles/code-style} 
+\usepackage{styles/mylib-style}
+
+% --- DADOS DA CAPA E FOLHA DE ROSTO ---
+\titulo{Poke-Adocao: Sistema de Adoção de Pokémon via Geolocalização}
+\autor{Aurora Drumond Costa Magalhães \and Ana Clara de Souza \and Kayke Wellington}
+\local{Timóteo - MG}
+\data{2026}
+
+\instituicao{%
+  Centro Universitário Católica do Leste de Minas Gerais
+  \par
+  Coronel Fabriciano}
+
+\tipotrabalho{Documentação de Arquitetura de Software}
+
+\preambulo{Relatório técnico apresentado como documentação oficial da arquitetura do sistema Poke-Adocao, detalhando as especificações de engenharia do serviço de backend e da aplicação móvel.}
+
+% --- INÍCIO DO DOCUMENTO ---
+\begin{document}
+
+% Elementos Pré-Textuais (Obrigatórios segundo a ABNT)
+\imprimircapa
+\imprimirfolhaderosto
+
+% --- RESUMOS ---
+\setlength{\absparsep}{18pt}
+
+\begin{resumo}
+O projeto Poke-Adocao consiste num sistema de adoção de Pokémon que utiliza geolocalização para interligar os utilizadores a criaturas virtuais no espaço físico. A arquitetura baseia-se num monorepo que integra uma API RESTful em Python com FastAPI no backend, e uma aplicação móvel multiplataforma construída em React Native e Expo no frontend. O núcleo do processo de adoção é gerido por uma Máquina de Estados Finitos (FSM). Atualmente operando de forma binária para garantir a integridade do ciclo de vida restrito a um limite rigoroso de 50 metros de distância, a FSM demonstra a fundação arquitetural necessária para suportar, futuramente, estados intermediários mais dinâmicos e contratos \textit{player-to-player} (P2P) complexos, como transações pendentes de aprovação. Para viabilizar este mecanismo, o sistema implementa um motor espacial que calcula distâncias geográficas utilizando a fórmula de Haversine diretamente na camada da aplicação, processo previamente otimizado por uma filtragem através de \textit{Bounding Box}. A persistência de dados é assegurada de forma leve e contida por um banco de dados relacional SQLite, escolhido estrategicamente para validar as transações de \textit{optimistic locking} e o fluxo de ponta a ponta do protótipo sem a sobrecarga de configuração de infraestrutura externa. O presente documento detalha as decisões de engenharia, a infraestrutura e os requisitos técnicos que sustentam a aplicação.
+
+\vspace{\onelineskip}
+\noindent
+\textbf{Palavras-chave:} Geolocalização. React Native. FastAPI. Máquina de Estados Finitos. Haversine. SQLite.
+\end{resumo}
+
+\begin{resumo}[Abstract]
+\begin{otherlanguage*}{english}
+The Poke-Adocao project is a Pokemon adoption system that leverages geolocation to connect users with virtual creatures in the physical world. The architecture is built upon a monorepo integrating a RESTful API developed in Python with FastAPI for the backend, and a cross-platform mobile application built with React Native and Expo for the frontend. The core adoption process is managed by a Finite State Machine (FSM). Currently operating in a binary manner to enforce the lifecycle under a strict 50-meter geographic threshold, the FSM demonstrates the architectural foundation necessary to support complex intermediate states and dynamic player-to-player (P2P) contracts in the future, such as pending approvals. To enable this mechanism, the system implements a spatial engine that computes geographic distances using the Haversine formula at the application layer, optimized by a Bounding Box pre-filtering process. Data persistence is handled in a lightweight and contained manner by a relational SQLite database, strategically chosen to validate optimistic locking transactions and the end-to-end flow of the prototype without the overhead of external infrastructure configuration. This document details the engineering decisions, infrastructure, and technical requirements underlying the application.
+
+\vspace{\onelineskip}
+\noindent
+\textbf{Keywords:} Geolocation. React Native. FastAPI. Finite State Machine. Haversine. SQLite.
+\end{otherlanguage*}
+\end{resumo}
+
+% --- LISTAS ---
+% Descomente as listas (removendo o sinal '%') que forem necessárias para o seu trabalho de acordo com os elementos presentes.
+
+% Lista de Figuras
+\pdfbookmark[0]{\listfigurename}{lof}
+\listoffigures*
+\cleardoublepage
+
+% Lista de Códigos / Trechos de Software
+% \pdfbookmark[0]{\lstlistlistingname}{lol}
+% \lstlistoflistings
+% \cleardoublepage
+
+% Lista de Quadros
+\pdfbookmark[0]{Lista de quadros}{loq}
+\listofquadros*
+\cleardoublepage
+
+% Sumário (Obrigatório)
+\pdfbookmark[0]{\contentsname}{toc}
+\tableofcontents
+\cleardoublepage
+
+% --------------------------------------------------------
+% ELEMENTOS TEXTUAIS
+% --------------------------------------------------------
+\textual
+
+% --- ESTRUTURAÇÃO EM MÚLTIPLOS ARQUIVOS ---
+% A chamada \include insere o conteúdo de arquivos externos. Isso permite modularizar o 
+% documento separando os tópicos exigidos no relatório técnico em arquivos .tex 
+% distintos dentro do diretório 'capitulos/'.
+% Não é necessário adicionar a extensão .tex ao usar o comando \include.
+
+\include{capitulos/01-introducao}           
+\include{capitulos/02-objetivos}            
+\include{capitulos/03-requisitos}           
+\include{capitulos/04-design-arquitetura}   
+\include{capitulos/05-trechos-codigo}       
+\include{capitulos/06-testes-validacao}     
+\include{capitulos/07-conclusao}            
+
+% --------------------------------------------------------
+% ELEMENTOS PÓS-TEXTUAIS
+% --------------------------------------------------------
+\postextual
+
+% --- REFERÊNCIAS BIBLIOGRÁFICAS ---
+% Elemento obrigatório. Puxa as citações do arquivo referencias.bib formatando nas normas da ABNT (NBR 6023).
+\bibliographystyle{abntex2-alf} % Define o estilo ABNT (Autor-Data)
+\bibliography{references}
+
+% --- APÊNDICES ---
+% Elemento opcional. Documentos criados pelo próprio autor para complementar a argumentação.
+% \begin{apendicesenv}
+% \partapendices
+% \chapter{<Título do Apêndice>}
+% <Conteúdo do apêndice, como questionários elaborados pela equipe, diagramas extensos, etc.>
+% \end{apendicesenv}
+
+% --- ANEXOS ---
+% Elemento opcional. Documentos não criados pelo autor que servem de fundamentação ou ilustração.
+% \begin{anexosenv}
+% \partanexos
+% \chapter{<Título do Anexo>}
+% <Conteúdo do anexo, como manuais de APIs de terceiros, leis, normas utilizadas, etc.>
+% \end{anexosenv}
+
+\end{document}

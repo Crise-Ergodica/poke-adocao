@@ -1,0 +1,19 @@
+\chapter{Design e Arquitetura}
+
+O padrão arquitetural macro adotado pelo sistema Poke-Adocao fundamenta-se no modelo Cliente-Servidor Desacoplado, operacionalizado sob a estrutura de um monorrepositório. Essa abordagem centraliza a governança do código-fonte e dos contratos de comunicação, permitindo o isolamento completo entre a aplicação cliente móvel e a API de serviços, que interagem estritamente por meio de protocolos de rede \textit{stateless}.
+
+\section{Visão Lógica e de Componentes}
+
+A organização interna do ecossistema é bifurcada entre as camadas funcionais de \textit{backend} e \textit{frontend}, estruturadas de forma modular para assegurar a separação de conceitos \cite{sommerville2011software}. 
+
+No \textit{backend}, a API segue uma Arquitetura em Camadas dirigida por serviços. A camada de roteamento e entrada, situada no arquivo \texttt{main.py}, atua como a interface de exposição dos \textit{endpoints} HTTP, gerenciando \textit{middlewares} e a orquestração de controladores assíncronos. A validação dos dados é centralizada no \texttt{schemas.py}, que utiliza o \textit{Pydantic} para garantir a tipagem estática e serialização de todas as requisições. As regras de negócio operam em uma camada dedicada composta por serviços como \texttt{adoption\_service.py} e \texttt{spatial\_service.py}, que isolam a lógica da Máquina de Estados Finitos (FSM) e as validações trigonométricas, enquanto a persistência é orquestrada através dos modelos declarativos em \texttt{models.py} e \texttt{database.py}, gerindo o ciclo de vida das sessões transacionais.
+
+No \textit{frontend}, a interface adota uma arquitetura baseada em componentes funcionais alimentados por injeção de estado via \textit{hooks}. O \texttt{RootNavigator.tsx} gerencia o fluxo global de autenticação condicional, chaveando o utilizador entre a tela de \textit{login} e a navegação principal estruturada no \texttt{MainTabs.tsx}. A gestão de estado é centralizada nativamente no \texttt{AuthContext.tsx}, encapsulando a persistência de \textit{tokens} e simplificando a telemetria, que é isolada no \textit{hook} reativo \texttt{useUserLocation.ts}, abstraindo a complexidade dos sensores de geolocalização nativos.
+
+\section{Visão de Dados}
+
+O modelo de persistência baseia-se no paradigma Relacional para salvaguardar a consistência da FSM. Atualmente, o protótipo utiliza o \textit{SGBD SQLite} para validar o fluxo de ponta a ponta com \textit{optimistic locking}, mantendo compatibilidade arquitetural para migração para \textit{PostgreSQL} em escala de produção. O mapeamento é orquestrado via \textit{SQLAlchemy}, estruturando o esquema lógico em torno de três entidades fundamentais: \texttt{users}, para metadados de identificação; \texttt{pokemons}, para referências da PokeAPI e estado da entidade; e \texttt{adoptions}, uma tabela de junção que materializa o vínculo transacional e audita o ciclo de vida da adoção.
+
+\section{Visão Física e de Implantação}
+
+A infraestrutura distribui as cargas de processamento em três nós lógicos de implantação. A Camada Cliente consiste nos artefatos compilados via \textit{Expo}, que executam nativamente em dispositivos móveis consumindo o hardware do receptor GPS. A Camada de

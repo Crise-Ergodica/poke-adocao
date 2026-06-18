@@ -1,0 +1,95 @@
+@book{fowler2002patterns,
+  title={Patterns of Enterprise Application Architecture},
+  author={Fowler, Martin},
+  year={2002},
+  publisher={Addison-Wesley Longman},
+  address={Boston}
+}
+
+@article{sinnott1984virtues,
+  title={Virtues of the Haversine},
+  author={Sinnott, Roger W},
+  journal={Sky and Telescope},
+  volume={68},
+  number={2},
+  pages={159},
+  year={1984}
+}
+
+@phdthesis{fielding2000architectural,
+  title={Architectural styles and the design of network-based software architectures},
+  author={Fielding, Roy Thomas},
+  year={2000},
+  school={University of California, Irvine}
+}
+
+@book{gurnani2020developing,
+  title={Developing Applications with React Native},
+  author={Gurnani, Akshat},
+  year={2020},
+  publisher={Packt Publishing Ltd},
+  address={Birmingham}
+}
+
+@book{sommerville2011software,
+  title={Software Engineering},
+  author={Sommerville, Ian},
+  year={2011},
+  publisher={Addison-Wesley},
+  address={Boston}
+}
+
+% ==============================================================================
+% MANUAL DE OPERAÇÃO: GERENCIAMENTO DE REFERÊNCIAS (BIBTEX + ABNTEX2)
+% ==============================================================================
+% 
+% 1. O CONCEITO DO ARQUIVO .BIB
+% No LaTeX, você não digita a lista de referências manualmente no final do texto.
+% O arquivo 'referencias.bib' atua como um banco de dados relacional. Você
+% cadastra os metadados das fontes nele e faz "consultas" no texto principal.
+% Regra de Ouro: Uma fonte cadastrada no .bib SÓ aparecerá no PDF final se
+% for explicitamente citada em algum lugar do texto.
+%
+% 2. COMO CADASTRAR UMA FONTE (No arquivo referencias.bib)
+% Cada entrada possui um "tipo" (@book, @article, @misc) e uma "chave" única
+% que você inventa para chamá-la depois.
+%
+% Exemplo de Livro Técnico:
+% @book{sommerville2011,
+%   author    = {Sommerville, Ian},
+%   title     = {Engenharia de software},
+%   publisher = {Pearson Prentice Hall},
+%   year      = {2011},
+%   address   = {São Paulo}
+% }
+%
+% Exemplo de Site, Documentação ou Repositório:
+% @misc{fastapi2026,
+%   author        = {Ramírez, Sebastián},
+%   title         = {FastAPI Documentation},
+%   year          = {2026},
+%   url           = {https://fastapi.tiangolo.com/},
+%   urlaccessdate = {8 jun. 2026}
+% }
+% Nota: Autores corporativos (ex: Meta, Google, W3C) devem ser envolvidos 
+% em chaves duplas no arquivo .bib para que o LaTeX não inverta os nomes. 
+% Ex: author = {{Meta Platforms}}
+%
+% 3. COMO CHAMAR A FONTE NO TEXTO (Nos arquivos .tex)
+% O pacote abntex2cite fornece comandos rigorosos para adequação à NBR 10520.
+%
+% -> Citação Indireta (Ao final da frase, em maiúsculas):
+% Comando: \cite{chave}
+% Exemplo: A arquitetura baseada em eventos reduz o acoplamento \cite{sommerville2011}.
+% PDF renderizado: A arquitetura baseada em eventos reduz o acoplamento (SOMMERVILLE, 2011).
+%
+% -> Citação Direta/Narrativa (Inserida no fluxo do texto):
+% Comando: \citeonline{chave}
+% Exemplo: Segundo \citeonline{sommerville2011}, a engenharia de requisitos é vital.
+% PDF renderizado: Segundo Sommerville (2011), a engenharia de requisitos é vital.
+%
+% -> Inserção Forçada (Sem citação textual):
+% Comando: \nocite{chave}
+% Uso: Insere a fonte na bibliografia final sem precisar colocar um (AUTOR, Ano) no texto.
+% Evite usar isso em trabalhos acadêmicos para burlar a fundamentação.
+% ==============================================================================
