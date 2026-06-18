@@ -4,7 +4,7 @@
  * Service to handle authentication API calls.
  */
 
-const API_URL = 'http://192.168.2.113:8000/api/v1'; // Adjust as needed for local network
+const API_URL = 'http://localhost:8000/api/v1'; // Adjust as needed for local network
 
 export const login = async (email: string, password: string) => {
   const response = await fetch(`${API_URL}/auth/login`, {
