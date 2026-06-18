@@ -247,7 +247,6 @@ export default function RadarScreen() {
                     <Card key={pokemon.id ?? index} style={styles.card} mode="elevated">
                       <Card.Title
                         title={isTooFar ? 'Unknown Signal' : (pokemon.name ? pokemon.name : `Pokemon ${pokemon.pokemon_id}`)}
-                
                         titleVariant="titleMedium"
                         subtitle={`Distância: ${Math.round(dist)}m`}
                         subtitleVariant="bodyMedium"
