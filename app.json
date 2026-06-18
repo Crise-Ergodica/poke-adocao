@@ -16,15 +16,25 @@
       "supportsTablet": true
     },
     "android": {
+      "package": "com.dragoniana.pokeadocao",
       "adaptiveIcon": {
         "foregroundImage": "./assets/icon.png",
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true
     },
-    "_comment": "The user must place their desired icon image at ./assets/icon.png",
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "59808ca5-ca48-4937-9cf2-b136a23e9f3e"
+      }
+    },
+    "plugins": [
+      "expo-asset",
+      "expo-font",
+      "expo-secure-store"
+    ]
   }
 }

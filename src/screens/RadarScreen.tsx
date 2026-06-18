@@ -1,31 +1,40 @@
-// Author: Aurora Drumond Magalhães, Ana Clara de Souza e Kayke Wellington
-import React, { useState, useEffect, useCallback } from 'react';
-import { View, StyleSheet, ScrollView, useWindowDimensions } from 'react-native';
+import React, { useCallback, useEffect, useState } from 'react';
+import { ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 import {
-  Card,
-  Text,
-  Button,
-  Snackbar,
-  List,
-  useTheme,
   ActivityIndicator,
   Avatar,
+  Button,
+  Card,
+  Snackbar,
+  Text,
+  useTheme,
 } from 'react-native-paper';
-import { useUserLocation } from '../hooks/useUserLocation';
-import { initiateAdoption, finalizeAdoption } from '../services/adoptionService';
-import { useAuth } from '../store/AuthContext';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
+import { finalizeAdoption, initiateAdoption } from '../services/adoptionService';
 import { getNearby, spawnPokemon } from '../services/pokemonService';
+import { useAuth } from '../store/AuthContext';
+import { useUserLocation } from '../hooks/useUserLocation';
 
+/*
+  Calcula a distância aproximada em metros entre duas coordenadas.
+  Essa função mantém a lógica original de proximidade usada no radar.
+*/
 function getDistanceInMeters(lat1: number, lon1: number, lat2: number, lon2: number): number {
-  const R = 6371e3; // Earth radius in meters
+  const R = 6371e3;
   const rad = Math.PI / 180;
   const dLat = (lat2 - lat1) * rad;
   const dLon = (lon2 - lon1) * rad;
+
   const a =
     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(lat1 * rad) * Math.cos(lat2 * rad) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    Math.cos(lat1 * rad) *
+      Math.cos(lat2 * rad) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
   return R * c;
 }
 
@@ -33,21 +42,48 @@ export default function RadarScreen() {
   const navigation = useNavigation<any>();
   const theme = useTheme();
   const { width } = useWindowDimensions();
+
+  /*
+    Responsividade:
+    em telas maiores, Pokemon e treinadores aparecem em colunas lado a lado.
+    em telas menores, ficam um abaixo do outro.
+  */
   const isDesktop = width > 768;
+
   const { userId, token } = useAuth();
+
+  /*
+    Hook original de localização do projeto.
+    Mantém validação de precisão e mensagens de erro.
+  */
   const { location, isAccuracySufficient, errorMsg, isLoading } = useUserLocation();
+
+  // Listas retornadas pelo radar.
   const [nearbyPokemon, setNearbyPokemon] = useState<any[]>([]);
   const [nearbyUsers, setNearbyUsers] = useState<any[]>([]);
+
+  // Estados visuais para mensagens e carregamento.
   const [snackbarVisible, setSnackbarVisible] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [loadingRadar, setLoadingRadar] = useState(false);
+
+  // Exibe mensagens no rodapé da tela.
+  const showSnackbar = (message: string) => {
+    setSnackbarMessage(message);
+    setSnackbarVisible(true);
+  };
+
+  /*
+    Busca Pokemon e treinadores próximos usando o serviço original.
+    Caso não exista Pokemon próximo, mantém a lógica de spawn já usada.
+  */
   const fetchNearby = useCallback(async () => {
     if (!location || !isAccuracySufficient || !token) return;
 
     setLoadingRadar(true);
+
     try {
       const data = await getNearby(location.latitude, location.longitude, token);
-
       const pokemonList = data.pokemon || [];
 
       if (pokemonList.length === 0) {
@@ -67,17 +103,24 @@ export default function RadarScreen() {
     }
   }, [location, isAccuracySufficient, token]);
 
+  /*
+    Atualiza o radar ao abrir a tela e repete a busca a cada 15 segundos.
+  */
   useEffect(() => {
     fetchNearby();
-    const interval = setInterval(fetchNearby, 15000); // Poll every 15s
+
+    const interval = setInterval(fetchNearby, 15000);
+
     return () => clearInterval(interval);
-  }, [location, isAccuracySufficient]);
+  }, [fetchNearby]);
 
-  const showSnackbar = (message: string) => {
-    setSnackbarMessage(message);
-    setSnackbarVisible(true);
-  };
-
+  /*
+    Fluxo de adoção:
+    - inicia adoção
+    - finaliza adoção
+    - atualiza radar
+    - navega para Party
+  */
   const handleAdopt = async (pokemonEntityId: number) => {
     if (!userId || !token) {
       showSnackbar('Authentication error. User ID or token not found.');
@@ -87,49 +130,99 @@ export default function RadarScreen() {
     try {
       const adoption = await initiateAdoption(pokemonEntityId, userId, token);
       await finalizeAdoption(adoption.id, token);
+
       showSnackbar('Pokemon adopted successfully!');
-      fetchNearby(); // Refresh lists
+      fetchNearby();
       navigation.navigate('Party');
     } catch (error: any) {
-      showSnackbar(error.message);
+      showSnackbar(error.message || 'Failed to adopt Pokemon');
     }
   };
 
+  /*
+    Estado de carregamento inicial da localização.
+  */
   if (isLoading) {
     return (
-      <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-        <ActivityIndicator animating={true} size="large" />
-      </View>
+      <SafeAreaView style={[styles.container, styles.centered, { backgroundColor: theme.colors.background }]}>
+        <ActivityIndicator animating size="large" />
+
+        <Text variant="bodyMedium" style={[styles.loadingText, { color: theme.colors.onSurfaceVariant }]}>
+          Localizando seu treinador...
+        </Text>
+      </SafeAreaView>
     );
   }
 
+  /*
+    Estado visual quando a localização falha ou a precisão não é suficiente.
+  */
   if (errorMsg || !isAccuracySufficient) {
     return (
-      <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-        <Text style={{ color: theme.colors.error, textAlign: 'center', padding: 20 }}>
-          {errorMsg || 'Accuracy insufficient. Please ensure accuracy <= 50m.'}
-        </Text>
-      </View>
+      <SafeAreaView style={[styles.container, styles.centered, { backgroundColor: theme.colors.background }]}>
+        <Card mode="contained" style={styles.statusCard}>
+          <Card.Content style={styles.centeredContent}>
+            <Avatar.Icon size={58} icon="map-marker-alert-outline" />
+
+            <Text variant="titleMedium" style={[styles.statusTitle, { color: theme.colors.error }]}>
+              Radar indisponível
+            </Text>
+
+            <Text style={{ color: theme.colors.onSurfaceVariant, textAlign: 'center' }}>
+              {errorMsg || 'Accuracy insufficient. Please ensure accuracy <= 50m.'}
+            </Text>
+          </Card.Content>
+        </Card>
+      </SafeAreaView>
     );
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.contentWrapper}>
-          <Text variant="headlineMedium" style={styles.title}>
-            Proximity Radar
-          </Text>
+          {/* Cabeçalho da tela. */}
+          <View style={styles.header}>
+            <Text variant="headlineMedium" style={[styles.title, { color: theme.colors.onBackground }]}>
+              Proximity Radar
+            </Text>
 
-          {loadingRadar && <ActivityIndicator animating={true} style={styles.loader} />}
+            <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
+              Atualização automática a cada 15 segundos.
+            </Text>
+          </View>
 
-          <View style={{ flexDirection: isDesktop ? 'row' : 'column', gap: 16 }}>
-            <View style={{ flex: isDesktop ? 1 : undefined }}>
+          {/* Card com a localização atual do usuário. */}
+          {location && (
+            <Card mode="contained" style={[styles.locationCard, { backgroundColor: theme.colors.primaryContainer }]}>
+              <Card.Content>
+                <Text variant="titleSmall" style={{ color: theme.colors.onPrimaryContainer }}>
+                  Sua localização
+                </Text>
+
+                <Text variant="bodySmall" style={{ color: theme.colors.onPrimaryContainer }}>
+                  Lat: {location.latitude.toFixed(4)} | Lon: {location.longitude.toFixed(4)}
+                </Text>
+              </Card.Content>
+            </Card>
+          )}
+
+          {/* Indicador pequeno de atualização do radar. */}
+          {loadingRadar && <ActivityIndicator animating style={styles.loader} />}
+
+          <View style={isDesktop ? styles.desktopColumns : styles.mobileColumns}>
+            {/* Coluna/lista de Pokemon próximos. */}
+            <View style={styles.column}>
               <Text variant="titleLarge" style={styles.sectionTitle}>
                 Wild Pokemon Nearby
               </Text>
+
               {nearbyPokemon.length === 0 ? (
-                <Text style={styles.emptyText}>No Pokemon nearby.</Text>
+                <Card mode="contained" style={styles.emptyCard}>
+                  <Card.Content>
+                    <Text style={styles.emptyText}>No Pokemon nearby.</Text>
+                  </Card.Content>
+                </Card>
               ) : (
                 nearbyPokemon.map((pokemon, index) => {
                   const dist = location
@@ -140,62 +233,79 @@ export default function RadarScreen() {
                         pokemon.longitude,
                       )
                     : Infinity;
+
+                  /*
+                    Mantém a regra de distância:
+                    se estiver a mais de 50 metros, não permite adoção.
+                  */
                   const isTooFar = dist > 50;
 
                   return (
-                    <Card key={index} style={styles.card} mode="elevated">
+                    <Card key={pokemon.id ?? index} style={styles.card} mode="elevated">
                       <Card.Title
                         title={isTooFar ? 'Unknown Signal' : `Pokemon ID: ${pokemon.pokemon_id}`}
                         titleVariant="titleMedium"
-                        subtitle={`Lat: ${pokemon.latitude.toFixed(4)}, Lon: ${pokemon.longitude.toFixed(4)}`}
+                        subtitle={`Distância: ${Math.round(dist)}m`}
                         subtitleVariant="bodyMedium"
-                        left={(props) =>
+                        left={() =>
                           pokemon.sprite_url && !isTooFar ? (
                             <Avatar.Image
-                              {...props}
+                              size={52}
                               source={{ uri: pokemon.sprite_url }}
                               style={{ backgroundColor: 'transparent' }}
                             />
                           ) : (
-                            <Avatar.Icon {...props} icon="help" />
+                            <Avatar.Icon size={52} icon="help" />
                           )
                         }
-                        right={(props) => (
-                          <Button
-                            mode="contained"
-                            onPress={() => handleAdopt(pokemon.id)}
-                            style={styles.actionButton}
-                            disabled={isTooFar}
-                          >
-                            {isTooFar ? 'Aproxime-se' : 'Acolher'}
-                          </Button>
-                        )}
                       />
+
+                      <Card.Content>
+                        <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                          Lat: {pokemon.latitude.toFixed(4)}, Lon: {pokemon.longitude.toFixed(4)}
+                        </Text>
+
+                        <Button
+                          mode="contained"
+                          icon={isTooFar ? 'map-marker-distance' : 'heart-plus-outline'}
+                          onPress={() => handleAdopt(pokemon.id)}
+                          style={styles.actionButton}
+                          disabled={isTooFar}
+                        >
+                          {isTooFar ? 'Aproxime-se' : 'Acolher'}
+                        </Button>
+                      </Card.Content>
                     </Card>
                   );
                 })
               )}
             </View>
 
-            <View style={{ flex: isDesktop ? 1 : undefined }}>
+            {/* Coluna/lista de treinadores próximos. */}
+            <View style={styles.column}>
               <Text variant="titleLarge" style={styles.sectionTitle}>
                 Nearby Trainers
               </Text>
+
               {nearbyUsers.length === 0 ? (
-                <Text style={styles.emptyText}>No trainers nearby.</Text>
+                <Card mode="contained" style={styles.emptyCard}>
+                  <Card.Content>
+                    <Text style={styles.emptyText}>No trainers nearby.</Text>
+                  </Card.Content>
+                </Card>
               ) : (
                 nearbyUsers.map((user, index) => (
-                  <Card key={index} style={styles.card} mode="elevated">
+                  <Card key={user.user_id ?? index} style={styles.card} mode="elevated">
                     <Card.Title
                       title={`Trainer: ${user.user_id}`}
                       titleVariant="titleMedium"
                       subtitle={`Lat: ${user.latitude.toFixed(4)}, Lon: ${user.longitude.toFixed(4)}`}
                       subtitleVariant="bodyMedium"
-                      left={(props) =>
+                      left={() =>
                         user.icon_url ? (
-                          <Avatar.Image {...props} source={{ uri: user.icon_url }} />
+                          <Avatar.Image size={52} source={{ uri: user.icon_url }} />
                         ) : (
-                          <Avatar.Icon {...props} icon="account" />
+                          <Avatar.Icon size={52} icon="account" />
                         )
                       }
                     />
@@ -207,6 +317,7 @@ export default function RadarScreen() {
         </View>
       </ScrollView>
 
+      {/* Mensagens de erro/sucesso da tela. */}
       <Snackbar
         visible={snackbarVisible}
         onDismiss={() => setSnackbarVisible(false)}
@@ -214,41 +325,91 @@ export default function RadarScreen() {
       >
         {snackbarMessage}
       </Snackbar>
-    </View>
+    </SafeAreaView>
   );
 }
 
+/*
+  Estilos visuais da tela Radar.
+  Não alteram localização, atualização automática ou fluxo de adoção.
+*/
 const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  centered: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 20,
+  },
+  centeredContent: {
+    alignItems: 'center',
+  },
   scrollContent: {
     padding: 16,
+    paddingBottom: 28,
   },
   contentWrapper: {
-    maxWidth: 1200,
+    maxWidth: 1180,
     alignSelf: 'center',
     width: '100%',
   },
-  title: {
+  header: {
     marginBottom: 16,
-    textAlign: 'center',
+  },
+  title: {
+    fontWeight: '800',
+    marginBottom: 4,
+  },
+  locationCard: {
+    borderRadius: 20,
+    marginBottom: 16,
+  },
+  desktopColumns: {
+    flexDirection: 'row',
+    marginHorizontal: -8,
+  },
+  mobileColumns: {
+    flexDirection: 'column',
+  },
+  column: {
+    flex: 1,
+    marginHorizontal: 8,
   },
   sectionTitle: {
     marginBottom: 12,
-    fontWeight: 'bold',
+    fontWeight: '800',
   },
   card: {
+    marginBottom: 14,
+    borderRadius: 22,
+  },
+  emptyCard: {
     marginBottom: 16,
+    borderRadius: 20,
   },
   emptyText: {
-    marginBottom: 16,
     fontStyle: 'italic',
+    textAlign: 'center',
   },
   loader: {
     marginBottom: 16,
   },
   actionButton: {
-    marginRight: 16,
+    marginTop: 14,
+    borderRadius: 14,
+  },
+  loadingText: {
+    marginTop: 12,
+  },
+  statusCard: {
+    width: '100%',
+    maxWidth: 420,
+    borderRadius: 24,
+  },
+  statusTitle: {
+    marginTop: 12,
+    marginBottom: 6,
+    fontWeight: '800',
   },
 });

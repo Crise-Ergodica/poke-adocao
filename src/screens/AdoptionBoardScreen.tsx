@@ -1,55 +1,97 @@
-/**
- * Author: Aurora Drumond Magalhães, Ana Clara de Souza e Kayke Wellington
- */
-
-import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, ScrollView, useWindowDimensions } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 import {
-  Card,
-  Text,
-  Button,
-  Snackbar,
-  List,
-  useTheme,
   ActivityIndicator,
   Avatar,
-  TextInput,
-  Searchbar,
-  Switch,
-  SegmentedButtons,
+  Button,
+  Card,
   Chip,
+  Searchbar,
+  SegmentedButtons,
+  Snackbar,
+  Switch,
+  Text,
+  useTheme,
 } from 'react-native-paper';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useAuth } from '../store/AuthContext';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { getAvailableAdoptions } from '../services/adoptionService';
+import { useAuth } from '../store/AuthContext';
+
+/*
+  Lista visual de tipos usada nos filtros avançados.
+  Não interfere no backend; apenas envia o tipo escolhido para o serviço já existente.
+*/
+const POKEMON_TYPES = [
+  'Fogo',
+  'Água',
+  'Planta',
+  'Elétrico',
+  'Gelo',
+  'Lutador',
+  'Veneno',
+  'Terra',
+  'Voador',
+  'Psíquico',
+  'Inseto',
+  'Pedra',
+  'Fantasma',
+  'Dragão',
+  'Sombrio',
+  'Metálico',
+  'Fada',
+  'Normal',
+];
+
+/*
+  Mapeamento entre texto exibido na tela e valor esperado pela API.
+*/
+const genderMap: Record<string, string> = {
+  Macho: 'male',
+  Fêmea: 'female',
+  'Sem Gênero': 'genderless',
+};
 
 export default function AdoptionBoardScreen() {
   const theme = useTheme();
   const { width } = useWindowDimensions();
-  const isDesktop = width > 768;
-  const { userId, token } = useAuth();
 
+  /*
+    Layout responsivo:
+    acima de 768px usa grade;
+    abaixo disso usa lista em coluna.
+  */
+  const isDesktop = width > 768;
+
+  const { token } = useAuth();
+
+  // Lista de adoções retornada pela API.
   const [adoptions, setAdoptions] = useState<any[]>([]);
+
+  // Estados de carregamento e filtros.
   const [loading, setLoading] = useState(false);
   const [searchPokemon, setSearchPokemon] = useState('');
   const [searchProvider, setSearchProvider] = useState('');
-
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [isShiny, setIsShiny] = useState(false);
   const [gender, setGender] = useState('Todos');
   const [selectedType, setSelectedType] = useState<string | undefined>(undefined);
 
+  // Snackbar usado para retorno visual ao usuário.
   const [snackbarVisible, setSnackbarVisible] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
 
-  const genderMap: Record<string, string> = {
-    Macho: 'male',
-    Fêmea: 'female',
-    'Sem Gênero': 'genderless',
+  const showSnackbar = (message: string) => {
+    setSnackbarMessage(message);
+    setSnackbarVisible(true);
   };
 
+  /*
+    Busca adoções usando o serviço original do projeto.
+    Apenas monta os filtros conforme os campos da tela.
+  */
   const fetchAdoptions = async () => {
     setLoading(true);
+
     try {
       const data = await getAvailableAdoptions(
         {
@@ -61,27 +103,32 @@ export default function AdoptionBoardScreen() {
         },
         token,
       );
+
       setAdoptions(data || []);
     } catch (error: any) {
-      showSnackbar(error.message);
+      showSnackbar(error.message || 'Failed to fetch available adoptions');
     } finally {
       setLoading(false);
     }
   };
 
+  /*
+    Carrega as adoções quando a tela é aberta.
+  */
   useEffect(() => {
     fetchAdoptions();
   }, []);
 
-  const showSnackbar = (message: string) => {
-    setSnackbarMessage(message);
-    setSnackbarVisible(true);
-  };
-
+  /*
+    Aceita uma adoção.
+    Mantém o endpoint e o fluxo já existente.
+  */
   const handleAcceptAdoption = async (adoptionId: number) => {
     if (!token) return;
+
     try {
       const API_URL = 'http://localhost:8000/api/v1';
+
       const response = await fetch(`${API_URL}/adoptions/${adoptionId}/accept`, {
         method: 'POST',
         headers: {
@@ -98,59 +145,71 @@ export default function AdoptionBoardScreen() {
       showSnackbar('Adoption successful! Check your party.');
       fetchAdoptions();
     } catch (error: any) {
-      showSnackbar(error.message);
+      showSnackbar(error.message || 'Failed to accept adoption');
     }
   };
 
-  const handleSearch = () => {
-    fetchAdoptions();
-  };
-
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.contentWrapper}>
-          <Text variant="headlineMedium" style={styles.title}>
-            Adoption Board
-          </Text>
+          {/* Cabeçalho da tela. */}
+          <View style={styles.header}>
+            <Text variant="headlineMedium" style={[styles.title, { color: theme.colors.onBackground }]}>
+              Adoption Board
+            </Text>
 
-          <Card style={styles.card}>
-            <Card.Title title="Search Filters" />
+            <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
+              Encontre Pokemons disponíveis e filtre por treinador, tipo, gênero ou shiny.
+            </Text>
+          </View>
+
+          {/* Card de filtros principais e avançados. */}
+          <Card mode="elevated" style={styles.filterCard}>
             <Card.Content>
-              <View style={isDesktop ? styles.row : styles.column}>
+              <View style={isDesktop ? styles.searchRow : styles.searchColumn}>
                 <Searchbar
                   placeholder="Pokemon Name"
                   value={searchPokemon}
                   onChangeText={setSearchPokemon}
-                  style={[styles.input, isDesktop && { flex: 1, marginRight: 8 }]}
+                  style={[styles.searchInput, isDesktop && styles.searchInputDesktop]}
                 />
+
                 <Searchbar
                   placeholder="Trainer Name"
                   value={searchProvider}
                   onChangeText={setSearchProvider}
-                  style={[styles.input, isDesktop && { flex: 1, marginLeft: 8 }]}
+                  style={[styles.searchInput, isDesktop && styles.searchInputDesktop]}
                 />
               </View>
+
               <Button
                 mode="outlined"
+                icon={showAdvancedFilters ? 'chevron-up' : 'tune-variant'}
                 onPress={() => setShowAdvancedFilters(!showAdvancedFilters)}
-                style={{ marginTop: 8, marginBottom: 8 }}
+                style={styles.advancedButton}
               >
                 {showAdvancedFilters ? 'Hide Advanced Filters' : 'Filtros Avançados'}
               </Button>
 
+              {/* Área expansível de filtros avançados. */}
               {showAdvancedFilters && (
-                <View style={styles.advancedFiltersContainer}>
+                <View style={[styles.advancedFiltersContainer, { backgroundColor: theme.colors.surfaceVariant }]}>
                   <View style={styles.filterRow}>
-                    <Text variant="titleMedium" style={{ marginRight: 16 }}>
-                      Apenas Shiny
-                    </Text>
+                    <View>
+                      <Text variant="titleSmall">Apenas Shiny</Text>
+                      <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                        Mostra apenas Pokemons raros
+                      </Text>
+                    </View>
+
                     <Switch value={isShiny} onValueChange={setIsShiny} />
                   </View>
 
-                  <Text variant="titleMedium" style={{ marginTop: 16, marginBottom: 8 }}>
+                  <Text variant="titleSmall" style={styles.filterLabel}>
                     Gender
                   </Text>
+
                   <SegmentedButtons
                     value={gender}
                     onValueChange={setGender}
@@ -162,34 +221,16 @@ export default function AdoptionBoardScreen() {
                     ]}
                   />
 
-                  <Text variant="titleMedium" style={{ marginTop: 16, marginBottom: 8 }}>
+                  <Text variant="titleSmall" style={styles.filterLabel}>
                     Types
                   </Text>
+
                   <ScrollView
                     horizontal
                     showsHorizontalScrollIndicator={false}
-                    style={styles.typesContainer}
+                    contentContainerStyle={styles.typesContainer}
                   >
-                    {[
-                      'Fogo',
-                      'Água',
-                      'Planta',
-                      'Elétrico',
-                      'Gelo',
-                      'Lutador',
-                      'Veneno',
-                      'Terra',
-                      'Voador',
-                      'Psíquico',
-                      'Inseto',
-                      'Pedra',
-                      'Fantasma',
-                      'Dragão',
-                      'Sombrio',
-                      'Metálico',
-                      'Fada',
-                      'Normal',
-                    ].map((type) => (
+                    {POKEMON_TYPES.map((type) => (
                       <Chip
                         key={type}
                         selected={selectedType === type}
@@ -203,61 +244,93 @@ export default function AdoptionBoardScreen() {
                 </View>
               )}
 
-              <Button mode="contained" onPress={handleSearch} style={styles.searchButton}>
+              <Button
+                mode="contained"
+                icon="magnify"
+                onPress={fetchAdoptions}
+                style={styles.searchButton}
+                contentStyle={styles.searchButtonContent}
+              >
                 Aplicar Filtros
               </Button>
             </Card.Content>
           </Card>
 
+          {/* Área de resultado das adoções. */}
           {loading ? (
-            <ActivityIndicator animating={true} size="large" style={styles.loader} />
+            <ActivityIndicator animating size="large" style={styles.loader} />
           ) : (
             <View style={isDesktop ? styles.grid : styles.column}>
               {adoptions.length === 0 ? (
-                <Text style={{ textAlign: 'center', marginTop: 20 }}>No adoptions available.</Text>
+                <Card mode="contained" style={styles.emptyCard}>
+                  <Card.Content style={styles.emptyContent}>
+                    <Avatar.Icon size={54} icon="pokeball" />
+
+                    <Text variant="titleMedium" style={styles.emptyTitle}>
+                      No adoptions available.
+                    </Text>
+
+                    <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant, textAlign: 'center' }}>
+                      Tente remover algum filtro ou buscar por outro Pokemon.
+                    </Text>
+                  </Card.Content>
+                </Card>
               ) : (
                 adoptions.map((adoption, index) => (
-                  <Card key={index} style={[styles.card, isDesktop && styles.gridItem]}>
+                  <Card
+                    key={adoption.id ?? index}
+                    mode="elevated"
+                    style={[styles.adoptionCard, isDesktop && styles.gridItem]}
+                  >
                     <Card.Content>
-                      <List.Item
-                        title={`Pokemon Entity ID: ${adoption.pokemon_entity_id}`}
-                        description={() => (
-                          <View>
-                            <Text>Provider: {adoption.provider_user_id || 'Unknown'}</Text>
-                            {adoption.pokemon?.is_shiny && (
-                              <Text style={{ marginTop: 4, fontWeight: 'bold' }}>
-                                <MaterialCommunityIcons
-                                  name="star-four-points"
-                                  size={16}
-                                  color="#FFD700"
-                                />{' '}
-                                SHINY{' '}
-                                <MaterialCommunityIcons
-                                  name="star-four-points"
-                                  size={16}
-                                  color="#FFD700"
-                                />
-                              </Text>
-                            )}
-                            {(adoption.pokemon?.type_1 || adoption.pokemon?.gender) && (
-                              <Text style={{ marginTop: 4 }}>
-                                {[adoption.pokemon?.type_1, adoption.pokemon?.gender]
-                                  .filter(Boolean)
-                                  .join(' | ')}
-                              </Text>
-                            )}
-                          </View>
+                      <View style={styles.adoptionHeader}>
+                        <Avatar.Icon
+                          size={48}
+                          icon="pokeball"
+                          style={{ backgroundColor: theme.colors.primaryContainer }}
+                          color={theme.colors.primary}
+                        />
+
+                        <View style={styles.adoptionTitleBlock}>
+                          <Text variant="titleMedium" style={styles.cardTitle}>
+                            Pokemon Entity ID: {adoption.pokemon_entity_id}
+                          </Text>
+
+                          <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                            Provider: {adoption.provider_user_id || 'Unknown'}
+                          </Text>
+                        </View>
+                      </View>
+
+                      {/* Chips com informações extras quando elas existem no retorno. */}
+                      <View style={styles.metaRow}>
+                        {adoption.pokemon?.is_shiny && (
+                          <Chip compact icon="star-four-points" style={styles.metaChip}>
+                            SHINY
+                          </Chip>
                         )}
-                        left={(props) => <Avatar.Icon size={40} icon="pokeball" />}
-                        right={(props) => (
-                          <Button
-                            mode="contained"
-                            onPress={() => handleAcceptAdoption(adoption.id)}
-                          >
-                            Adopt
-                          </Button>
+
+                        {adoption.pokemon?.type_1 && (
+                          <Chip compact style={styles.metaChip}>
+                            {adoption.pokemon.type_1}
+                          </Chip>
                         )}
-                      />
+
+                        {adoption.pokemon?.gender && (
+                          <Chip compact style={styles.metaChip}>
+                            {adoption.pokemon.gender}
+                          </Chip>
+                        )}
+                      </View>
+
+                      <Button
+                        mode="contained"
+                        icon="heart-plus-outline"
+                        onPress={() => handleAcceptAdoption(adoption.id)}
+                        style={styles.adoptButton}
+                      >
+                        Adopt
+                      </Button>
                     </Card.Content>
                   </Card>
                 ))
@@ -274,43 +347,88 @@ export default function AdoptionBoardScreen() {
       >
         {snackbarMessage}
       </Snackbar>
-    </View>
+    </SafeAreaView>
   );
 }
 
+/*
+  Estilos da tela de adoção.
+  Focados apenas em organização visual, responsividade e legibilidade.
+*/
 const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
   scrollContent: {
     padding: 16,
+    paddingBottom: 28,
   },
   contentWrapper: {
-    maxWidth: 1200,
+    maxWidth: 1180,
     alignSelf: 'center',
     width: '100%',
   },
+  header: {
+    marginBottom: 16,
+  },
   title: {
-    marginBottom: 16,
-    textAlign: 'center',
+    fontWeight: '800',
+    marginBottom: 4,
   },
-  card: {
-    marginBottom: 16,
+  filterCard: {
+    borderRadius: 24,
+    marginBottom: 18,
   },
-  input: {
+  searchRow: {
+    flexDirection: 'row',
+    marginHorizontal: -6,
+  },
+  searchColumn: {
+    flexDirection: 'column',
+  },
+  searchInput: {
     marginBottom: 12,
   },
-  searchButton: {
-    marginTop: 8,
+  searchInputDesktop: {
+    flex: 1,
+    marginHorizontal: 6,
   },
-  row: {
+  advancedButton: {
+    alignSelf: 'flex-start',
+    marginBottom: 12,
+    borderRadius: 14,
+  },
+  advancedFiltersContainer: {
+    borderRadius: 18,
+    padding: 14,
+    marginBottom: 14,
+  },
+  filterRow: {
     flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
-  column: {
-    flexDirection: 'column',
+  filterLabel: {
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  typesContainer: {
+    paddingBottom: 4,
+  },
+  chip: {
+    marginRight: 8,
+  },
+  searchButton: {
+    borderRadius: 16,
+  },
+  searchButtonContent: {
+    paddingVertical: 6,
   },
   loader: {
     marginTop: 32,
+  },
+  column: {
+    flexDirection: 'column',
   },
   grid: {
     flexDirection: 'row',
@@ -318,25 +436,48 @@ const styles = StyleSheet.create({
     marginHorizontal: -8,
   },
   gridItem: {
-    width: 'calc(50% - 16px)',
+    width: '48%',
     marginHorizontal: 8,
   },
-  advancedFiltersContainer: {
-    marginTop: 8,
-    marginBottom: 8,
-    padding: 8,
-    backgroundColor: 'rgba(0,0,0,0.03)',
-    borderRadius: 8,
+  adoptionCard: {
+    marginBottom: 16,
+    borderRadius: 22,
   },
-  filterRow: {
+  adoptionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-  typesContainer: {
-    flexDirection: 'row',
-    paddingBottom: 8,
+  adoptionTitleBlock: {
+    flex: 1,
+    marginLeft: 12,
   },
-  chip: {
-    marginRight: 8,
+  cardTitle: {
+    fontWeight: '700',
+  },
+  metaRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginTop: 14,
+    marginHorizontal: -4,
+  },
+  metaChip: {
+    marginHorizontal: 4,
+    marginBottom: 8,
+  },
+  adoptButton: {
+    marginTop: 8,
+    borderRadius: 14,
+  },
+  emptyCard: {
+    borderRadius: 24,
+  },
+  emptyContent: {
+    alignItems: 'center',
+    paddingVertical: 28,
+  },
+  emptyTitle: {
+    marginTop: 12,
+    marginBottom: 4,
+    fontWeight: '700',
   },
 });

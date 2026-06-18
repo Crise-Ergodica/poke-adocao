@@ -1,25 +1,32 @@
-// Author: Aurora Drumond Magalhães, Ana Clara de Souza e Kayke Wellington
 import React, { useCallback, useState } from 'react';
-import { View, StyleSheet, FlatList, Image, useWindowDimensions } from 'react-native';
+import { FlatList, Image, StyleSheet, View, useWindowDimensions } from 'react-native';
 import {
-  Text,
-  Surface,
-  useTheme,
   ActivityIndicator,
   Button,
-  Portal,
   Modal,
-  TouchableRipple,
+  Portal,
   Snackbar,
+  Surface,
+  Text,
+  TouchableRipple,
+  useTheme,
 } from 'react-native-paper';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useFocusEffect } from '@react-navigation/native';
-import { useAuth } from '../store/AuthContext';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { returnPokemon } from '../services/adoptionService';
+import { useAuth } from '../store/AuthContext';
 
+/*
+  Endpoint original usado pela tela.
+  Mantido aqui para preservar o comportamento atual do projeto.
+*/
 const API_URL = 'http://localhost:8000/api/v1';
 
+/*
+  Interface básica do Pokemon do usuário.
+  Mantém os campos usados pela tela original.
+*/
 interface UserPokemon {
   id: number;
   pokemon_id: number;
@@ -28,54 +35,56 @@ interface UserPokemon {
 
 export default function PartyScreen() {
   const { width } = useWindowDimensions();
+
+  /*
+    Layout responsivo:
+    - telas grandes: 6 colunas
+    - tablets ou web menor: 3 colunas
+    - celular: 2 colunas
+  */
   const numCols = width > 1000 ? 6 : width > 768 ? 3 : 2;
+
   const { userId, token } = useAuth();
   const theme = useTheme();
+
+  // Lista de Pokemon na party do usuário.
   const [party, setParty] = useState<UserPokemon[]>([]);
+
+  // Estados de carregamento e ações.
   const [loading, setLoading] = useState(true);
   const [returningId, setReturningId] = useState<number | null>(null);
+
+  // Pokemon selecionado no modal.
   const [selectedPokemon, setSelectedPokemon] = useState<UserPokemon | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
+
+  // Snackbar para mensagens visuais.
   const [snackbarVisible, setSnackbarVisible] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
 
+  const showSnackbar = (message: string) => {
+    setSnackbarMessage(message);
+    setSnackbarVisible(true);
+  };
+
+  // Abre o modal com as ações do Pokemon selecionado.
   const showModal = (pokemon: UserPokemon) => {
     setSelectedPokemon(pokemon);
     setModalVisible(true);
   };
+
   const hideModal = () => setModalVisible(false);
 
-  const handleListForAdoption = async () => {
-    if (!selectedPokemon || !token) return;
-    try {
-      const response = await fetch(
-        `${API_URL}/users/pokemon/${selectedPokemon.id}/list_for_adoption`,
-        {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        },
-      );
-      if (response.ok) {
-        setSnackbarMessage('Pokemon listed for adoption!');
-        setSnackbarVisible(true);
-        hideModal();
-        await fetchParty();
-      } else {
-        const err = await response.json();
-        console.error('Failed to list for adoption:', err);
-      }
-    } catch (error) {
-      console.error('Error listing pokemon for adoption:', error);
-    }
-  };
-
+  /*
+    Busca a party do usuário.
+    Mantém o endpoint original: /users/{userId}
+  */
   const fetchParty = async () => {
     if (!userId) return;
+
     try {
       const response = await fetch(`${API_URL}/users/${userId}`);
+
       if (response.ok) {
         const data = await response.json();
         setParty(data.party || []);
@@ -87,15 +96,53 @@ export default function PartyScreen() {
     }
   };
 
+  /*
+    Atualiza a party sempre que a tela ganha foco.
+    Mantém a lógica original baseada em useFocusEffect.
+  */
   useFocusEffect(
     useCallback(() => {
       fetchParty();
     }, [userId]),
   );
 
+  /*
+    Coloca o Pokemon selecionado para adoção.
+    Mantém a chamada original para list_for_adoption.
+  */
+  const handleListForAdoption = async () => {
+    if (!selectedPokemon || !token) return;
+
+    try {
+      const response = await fetch(`${API_URL}/users/pokemon/${selectedPokemon.id}/list_for_adoption`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        showSnackbar('Pokemon listed for adoption!');
+        hideModal();
+        await fetchParty();
+      } else {
+        const err = await response.json();
+        console.error('Failed to list for adoption:', err);
+      }
+    } catch (error) {
+      console.error('Error listing pokemon for adoption:', error);
+    }
+  };
+
+  /*
+    Devolve/remove Pokemon usando o serviço original returnPokemon.
+  */
   const handleReturn = async (pokemonEntityId: number) => {
     if (!token) return;
+
     setReturningId(pokemonEntityId);
+
     try {
       await returnPokemon(pokemonEntityId, token);
       await fetchParty();
@@ -106,60 +153,65 @@ export default function PartyScreen() {
     }
   };
 
+  /*
+    A party sempre mostra 6 slots.
+    Quando não houver Pokemon em determinada posição, exibe slot vazio.
+  */
   const slots = Array.from({ length: 6 }).map((_, index) => party[index] || null);
 
-  const renderItem = ({ item, index }: { item: UserPokemon | null; index: number }) => {
-    return (
-      <Surface
-        style={[
-          styles.slot,
-          { backgroundColor: theme.colors.surfaceVariant, flex: 1 / numCols, margin: 8 },
-        ]}
-        elevation={2}
-      >
-        {item ? (
-          <TouchableRipple onPress={() => showModal(item)} style={styles.pokemonContainer}>
-            <View
-              style={{
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: '100%',
-                height: '100%',
+  /*
+    Renderiza cada slot da party.
+    Se houver Pokemon, exibe sprite e abre modal ao clicar.
+    Se estiver vazio, exibe indicador de slot vazio.
+  */
+  const renderItem = ({ item, index }: { item: UserPokemon | null; index: number }) => (
+    <Surface
+      style={[
+        styles.slot,
+        {
+          backgroundColor: item ? theme.colors.surface : theme.colors.surfaceVariant,
+          flex: 1 / numCols,
+        },
+      ]}
+      elevation={2}
+    >
+      {item ? (
+        <TouchableRipple onPress={() => showModal(item)} style={styles.pokemonContainer}>
+          <View style={styles.pokemonContent}>
+            <Image
+              source={{
+                uri: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${item.pokemon_id}.png`,
               }}
-            >
-              <Image
-                source={{
-                  uri: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${item.pokemon_id}.png`,
-                }}
-                style={styles.sprite}
-              />
-              <Text variant="bodyMedium" style={styles.pokemonIdLabel}>
-                ID: {item.pokemon_id}
-              </Text>
-            </View>
-          </TouchableRipple>
-        ) : (
-          <View style={styles.emptySlot}>
-            <MaterialCommunityIcons
-              name="help-circle-outline"
-              size={40}
-              color={theme.colors.onSurfaceVariant}
+              style={styles.sprite}
             />
-            <Text
-              variant="labelSmall"
-              style={{ color: theme.colors.onSurfaceVariant, marginTop: 4 }}
-            >
-              Empty Slot
+
+            <Text variant="titleSmall" style={styles.pokemonIdLabel}>
+              ID: {item.pokemon_id}
             </Text>
           </View>
-        )}
-      </Surface>
-    );
-  };
+        </TouchableRipple>
+      ) : (
+        <View style={styles.emptySlot}>
+          <MaterialCommunityIcons
+            name="help-circle-outline"
+            size={40}
+            color={theme.colors.onSurfaceVariant}
+          />
 
+          <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 4 }}>
+            Empty Slot
+          </Text>
+        </View>
+      )}
+    </Surface>
+  );
+
+  /*
+    Tela de carregamento enquanto busca a party.
+  */
   if (loading) {
     return (
-      <SafeAreaView style={[styles.container, styles.centered]}>
+      <SafeAreaView style={[styles.container, styles.centered, { backgroundColor: theme.colors.background }]}>
         <ActivityIndicator size="large" />
       </SafeAreaView>
     );
@@ -167,9 +219,18 @@ export default function PartyScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <Text variant="headlineMedium" style={[styles.title, { color: theme.colors.primary }]}>
-        Your Party
-      </Text>
+      {/* Cabeçalho com quantidade de slots preenchidos. */}
+      <View style={styles.header}>
+        <Text variant="headlineMedium" style={[styles.title, { color: theme.colors.onBackground }]}>
+          Your Party
+        </Text>
+
+        <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
+          {party.length}/6 slots preenchidos
+        </Text>
+      </View>
+
+      {/* Grade responsiva dos 6 slots. */}
       <FlatList
         key={numCols}
         data={slots}
@@ -180,58 +241,72 @@ export default function PartyScreen() {
         columnWrapperStyle={styles.row}
       />
 
+      {/* Modal de ações do Pokemon selecionado. */}
       <Portal>
         <Modal
           visible={modalVisible}
           onDismiss={hideModal}
           contentContainerStyle={[
             styles.modalContainer,
-            { backgroundColor: theme.colors.background },
+            { backgroundColor: theme.colors.surface },
           ]}
         >
           {selectedPokemon && (
             <View style={styles.modalContent}>
-              <Image
-                source={{
-                  uri: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${selectedPokemon.pokemon_id}.png`,
-                }}
-                style={styles.modalSprite}
-              />
+              <View style={[styles.modalSpriteWrapper, { backgroundColor: theme.colors.primaryContainer }]}>
+                <Image
+                  source={{
+                    uri: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${selectedPokemon.pokemon_id}.png`,
+                  }}
+                  style={styles.modalSprite}
+                />
+              </View>
+
               <Text variant="titleLarge" style={styles.modalTitle}>
                 {selectedPokemon.name || `Pokemon ${selectedPokemon.pokemon_id}`}
               </Text>
-              <Text variant="bodyMedium">ID: {selectedPokemon.pokemon_id}</Text>
+
+              <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
+                ID: {selectedPokemon.pokemon_id}
+              </Text>
 
               <View style={styles.modalActions}>
+                {/* Botões mantidos como estavam, sem implementar lógica nova. */}
                 <Button
-                  mode="contained"
+                  mode="contained-tonal"
                   onPress={() => console.log('Ver Status')}
                   style={styles.modalButton}
                 >
                   Ver Status
                 </Button>
+
                 <Button
-                  mode="contained"
+                  mode="contained-tonal"
                   onPress={() => console.log('Renomear')}
                   style={styles.modalButton}
                 >
                   Renomear
                 </Button>
-                <Button mode="contained" onPress={handleListForAdoption} style={styles.modalButton}>
+
+                <Button
+                  mode="contained"
+                  onPress={handleListForAdoption}
+                  style={styles.modalButton}
+                >
                   Colocar para Adoção
                 </Button>
+
                 <Button
                   mode="outlined"
                   textColor={theme.colors.error}
                   style={[styles.modalButton, { borderColor: theme.colors.error }]}
+                  loading={returningId === selectedPokemon.id}
                   onPress={async () => {
                     await handleReturn(selectedPokemon.id);
                     hideModal();
                   }}
-                  loading={returningId === selectedPokemon.id}
-                  disabled={returningId === selectedPokemon.id}
                 >
-                  Abandonar
+                  Return Pokemon
                 </Button>
               </View>
             </View>
@@ -239,6 +314,7 @@ export default function PartyScreen() {
         </Modal>
       </Portal>
 
+      {/* Mensagens visuais da tela. */}
       <Snackbar
         visible={snackbarVisible}
         onDismiss={() => setSnackbarVisible(false)}
@@ -250,73 +326,96 @@ export default function PartyScreen() {
   );
 }
 
+/*
+  Estilos visuais da party.
+  Não alteram regra de party, quantidade de slots ou chamadas de API.
+*/
 const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
   centered: {
-    justifyContent: 'center',
     alignItems: 'center',
+    justifyContent: 'center',
+  },
+  header: {
+    paddingHorizontal: 18,
+    paddingTop: 8,
+    paddingBottom: 12,
   },
   title: {
-    textAlign: 'center',
-    marginVertical: 16,
-    fontWeight: 'bold',
+    fontWeight: '800',
   },
   listContainer: {
-    padding: 16,
+    paddingHorizontal: 10,
+    paddingBottom: 24,
   },
   row: {
-    justifyContent: 'flex-start',
+    justifyContent: 'center',
   },
   slot: {
+    minHeight: 150,
     aspectRatio: 1,
-    borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
+    margin: 8,
+    borderRadius: 24,
     overflow: 'hidden',
   },
   pokemonContainer: {
+    flex: 1,
+  },
+  pokemonContent: {
     alignItems: 'center',
     justifyContent: 'center',
     width: '100%',
     height: '100%',
-    paddingVertical: 8,
   },
   sprite: {
-    width: '50%',
-    height: '50%',
+    width: 92,
+    height: 92,
   },
   pokemonIdLabel: {
-    marginTop: 4,
-    fontWeight: 'bold',
+    marginTop: 8,
+    fontWeight: '800',
   },
   emptySlot: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
   modalContainer: {
     margin: 20,
-    borderRadius: 16,
-    padding: 20,
+    padding: 22,
+    borderRadius: 28,
+    alignSelf: 'center',
+    width: '90%',
+    maxWidth: 420,
   },
   modalContent: {
     alignItems: 'center',
   },
+  modalSpriteWrapper: {
+    width: 148,
+    height: 148,
+    borderRadius: 74,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 14,
+  },
   modalSprite: {
-    width: 150,
-    height: 150,
+    width: 128,
+    height: 128,
   },
   modalTitle: {
-    fontWeight: 'bold',
-    marginBottom: 8,
-    textTransform: 'capitalize',
+    fontWeight: '800',
+    marginBottom: 4,
+    textAlign: 'center',
   },
   modalActions: {
-    marginTop: 16,
     width: '100%',
+    marginTop: 20,
   },
   modalButton: {
-    marginBottom: 8,
+    marginBottom: 10,
+    borderRadius: 14,
   },
 });
