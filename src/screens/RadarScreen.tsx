@@ -15,6 +15,7 @@ import { finalizeAdoption, initiateAdoption } from '../services/adoptionService'
 import { getNearby, spawnPokemon } from '../services/pokemonService';
 import { useAuth } from '../store/AuthContext';
 import { useUserLocation } from '../hooks/useUserLocation';
+import { updateUserLocation } from '../services/locationService';
 
 /*
   Calcula a distância aproximada em metros entre duas coordenadas.
@@ -56,8 +57,7 @@ export default function RadarScreen() {
     Hook original de localização do projeto.
     Mantém validação de precisão e mensagens de erro.
   */
-  const { location, isAccuracySufficient, errorMsg, isLoading } = useUserLocation();
-
+  const { location, accuracy, isAccuracySufficient, errorMsg, isLoading } = useUserLocation();
   // Listas retornadas pelo radar.
   const [nearbyPokemon, setNearbyPokemon] = useState<any[]>([]);
   const [nearbyUsers, setNearbyUsers] = useState<any[]>([]);
@@ -78,11 +78,14 @@ export default function RadarScreen() {
     Caso não exista Pokemon próximo, mantém a lógica de spawn já usada.
   */
   const fetchNearby = useCallback(async () => {
-    if (!location || !isAccuracySufficient || !token) return;
+    // Adicionada a validação do userId para garantir que temos os dados necessários
+    if (!location || !isAccuracySufficient || !token || !userId) return;
 
     setLoadingRadar(true);
 
     try {
+      await updateUserLocation(userId, location.latitude, location.longitude, accuracy ?? 10);
+
       const data = await getNearby(location.latitude, location.longitude, token);
       const pokemonList = data.pokemon || [];
 
@@ -101,7 +104,7 @@ export default function RadarScreen() {
     } finally {
       setLoadingRadar(false);
     }
-  }, [location, isAccuracySufficient, token]);
+  }, [location, accuracy, isAccuracySufficient, token, userId]);
 
   /*
     Atualiza o radar ao abrir a tela e repete a busca a cada 15 segundos.
@@ -255,7 +258,12 @@ export default function RadarScreen() {
                               style={{ backgroundColor: 'transparent' }}
                             />
                           ) : (
-                            <Avatar.Icon size={52} icon="help" />
+                            <Avatar.Icon 
+                              size={52} 
+                              icon="grass" 
+                              color="#4CAF50" /* Hexadecimal para um verde vibrante estilo Pokémon */
+                              style={{ backgroundColor: 'transparent' }} /* Fundo transparente para parecer natural */
+                            />
                           )
                         }
                       />

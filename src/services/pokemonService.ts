@@ -15,9 +15,14 @@ export const spawnPokemon = async (lat: number, lon: number, token: string) => {
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  const response = await fetch(`${API_URL}/spawn?latitude=${lat}&longitude=${lon}`, {
+  // CORREÇÃO: Remover parâmetros da URL e adicionar o JSON no 'body'
+  const response = await fetch(`${API_URL}/spawn`, {
     method: 'POST',
     headers,
+    body: JSON.stringify({
+      latitude: lat,
+      longitude: lon
+    }),
   });
 
   if (!response.ok) {

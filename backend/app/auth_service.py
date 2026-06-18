@@ -12,7 +12,7 @@ from fastapi import HTTPException, status
 from app.models import User
 from app.schemas import UserSchema, UserCreate, Token
 
-SECRET_KEY = "my_super_secret_jwt_key_for_mvp"
+SECRET_KEY = "my_super_secret_jwt_key_for_mvp_!"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7 # 7 days
 

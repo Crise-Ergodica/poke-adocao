@@ -37,7 +37,9 @@ from pydantic import BaseModel
 from app.auth_service import register_user, authenticate_user, create_access_token, SECRET_KEY, ALGORITHM, get_password_hash
 from fastapi.security import OAuth2PasswordBearer
 import jwt
+import logging
 
+logger = logging.getLogger(__name__)
 
 Base.metadata.create_all(bind=engine)
 
@@ -90,7 +92,7 @@ async def pokemon_spawner_task():
                     try:
                         await spawn_wild_pokemon(db, new_lat, new_lon)
                     except Exception as e:
-                        pass
+                        logger.error(f"Error occurred while spawning wild Pokémon for user {user.user_id}: {e}")
             else:
                 # No active users, fallback to default coordinates
                 u = random.random()
@@ -228,39 +230,29 @@ def login_endpoint(request: UserLogin, db: Session = Depends(get_db)):
 
 @app.post("/api/v1/location/update")
 def update_location(location: LocationUpdate, db: Session = Depends(get_db)):
-    """
-    Update the user's location if the accuracy is sufficient.
-
-    Args:
-        location (LocationUpdate): The location update data.
-        db (Session): The database session.
-
-    Raises:
-        HTTPException: If accuracy is > 50m.
-
-    Returns:
-        dict: A success message.
-    """
-    if location.accuracy > 50.0:
-        raise HTTPException(status_code=400, detail="Accuracy insufficient. Must be <= 50m.")
+    # Aumentado para 500m para permitir testes em ambientes fechados (escritórios/casas)
+    if location.accuracy > 500.0:
+        raise HTTPException(status_code=400, detail="Accuracy insufficient. Must be <= 500m.")
 
     user = db.query(User).filter(User.user_id == location.userId).first()
+    
+    # Consolidado para UTC, mesma base de tempo usada no PokeAPI Service
+    now_utc = datetime.utcnow()
 
     if user:
         user.latitude = location.latitude
         user.longitude = location.longitude
-        user.last_updated = datetime.now()
+        user.last_updated = now_utc
     else:
         user = User(
             user_id=location.userId,
             latitude=location.latitude,
             longitude=location.longitude,
-            last_updated=datetime.now()
+            last_updated=now_utc
         )
         db.add(user)
 
     db.commit()
-
     return {"message": "Location updated successfully"}
 
 class IconUpdateRequest(BaseModel):

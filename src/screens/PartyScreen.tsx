@@ -186,7 +186,7 @@ export default function PartyScreen() {
             />
 
             <Text variant="titleSmall" style={styles.pokemonIdLabel}>
-              ID: {item.pokemon_id}
+              {item.name ? item.name : `Pokémon ${item.pokemon_id}`}
             </Text>
           </View>
         </TouchableRipple>

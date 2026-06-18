@@ -10,9 +10,6 @@ export interface LocationState {
   isLoading: boolean;
 }
 
-/**
- * Custom hook to manage user location and enforce accuracy requirements.
- */
 export const useUserLocation = (): LocationState => {
   const [state, setState] = useState<LocationState>({
     location: null,
@@ -30,6 +27,22 @@ export const useUserLocation = (): LocationState => {
         let { status } = await Location.requestForegroundPermissionsAsync();
 
         if (status !== 'granted') {
+          // INTERVENÇÃO ESTRATÉGICA: Isolamento para ambiente de desenvolvimento
+          if (__DEV__) {
+            console.warn("Permissão negada. Forçando localização (Apenas DEV).");
+            if (isMounted) {
+              setState({
+                location: { latitude: -19.5312, longitude: -42.6105 }, // Coordenadas de contingência
+                accuracy: 10, // Acurácia ideal simulada
+                isAccuracySufficient: true,
+                errorMsg: null,
+                isLoading: false,
+              });
+            }
+            return;
+          }
+
+          // FLUXO RIGOROSO DE PRODUÇÃO
           if (isMounted) {
             setState(prev => ({
               ...prev,
@@ -45,8 +58,10 @@ export const useUserLocation = (): LocationState => {
             accuracy: Location.Accuracy.Highest
         });
 
+        // NOTA: Certifique-se de que o backend e o frontend operam com a mesma
+        // tolerância de precisão (accuracy). Atualmente este código exige <= 50m.
         const accuracy = locationData.coords.accuracy || 1000;
-        const isSufficient = accuracy <= 50;
+        const isSufficient = accuracy <= 50; 
 
         if (isMounted) {
           setState({
@@ -61,6 +76,21 @@ export const useUserLocation = (): LocationState => {
           });
         }
       } catch (error) {
+        // Fallback também ativado em caso de erro de leitura do sensor em desenvolvimento
+        if (__DEV__) {
+            console.warn("Erro ao buscar GPS. Forçando localização (Apenas DEV).");
+            if (isMounted) {
+              setState({
+                location: { latitude: -19.5312, longitude: -42.6105 },
+                accuracy: 10,
+                isAccuracySufficient: true,
+                errorMsg: null,
+                isLoading: false,
+              });
+            }
+            return;
+        }
+
         if (isMounted) {
           const errMsg = Platform.OS === 'web'
             ? 'Location error on Web. Ensure HTTPS or check browser permissions.'

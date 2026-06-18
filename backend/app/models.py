@@ -83,7 +83,7 @@ class PokemonEntity(Base):
 
     """
     __tablename__ = 'pokemon_entities'
-
+    
     id = Column(Integer, primary_key=True, index=True)
     pokemon_id = Column(Integer, index=True)
     latitude = Column(Float)
@@ -96,6 +96,7 @@ class PokemonEntity(Base):
     created_at = Column(DateTime)
     expires_at = Column(DateTime)
     version_id = Column(Integer, nullable=False, default=1)
+    name = Column(String, nullable=True)
 
     __mapper_args__ = {
         "version_id_col": version_id
